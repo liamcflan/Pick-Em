@@ -18,9 +18,12 @@ Multiple leagues run at once, joined by invite code.
 
 ## Branching
 
-- `main` — what is deployed to production. Only receives merges from `dev` at milestones.
-- `dev` — integration branch. Feature branches (`phase-1/leagues`, `fix/...`) open PRs against `dev`.
-- CI runs on every PR and on pushes to `dev` and `main`. Vercel builds previews for PRs and `dev`, production from `main`.
+- `dev` — the working branch. Day-to-day work is pushed here directly; Vercel deploys it as a preview.
+- `main` — production. Only changes through pull requests from `dev`, and only when CI is green
+  (lint, types, unit tests, pgTAP against a real Supabase, Playwright e2e). Protect `main` in GitHub
+  settings: require the three CI checks and block direct pushes.
+- CI runs on every push to `dev` and `main` and on every PR, so a red `dev` is visible before the
+  release PR is opened.
 
 ## Local development
 

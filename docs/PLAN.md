@@ -57,7 +57,7 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
 18. **Data sources.** **Default:** ESPN public API for scores/status/win probability; The Odds API for the weekly spread lock; provider interfaces so either swaps.
 19. **Live update mechanism.** **Default:** polling first, Supabase Realtime in Phase 2.
 20. **Scale target.** **Decided: design for ~5,000 users / ~500 leagues, run on free tiers sized for 20.** Every choice in §6b is checked against that.
-21. **Repo hygiene.** **Decided:** `main` (production) and `dev` (integration) branches; feature branches PR into `dev`, `dev` promotes to `main` at milestones. Public repo, PRs with CI, `docs/adr/`.
+21. **Repo hygiene.** **Decided:** two branches. `dev` is the working branch, pushed to directly and deployed as a Vercel preview. `main` is production and only changes via `dev` → `main` pull requests that require the full CI suite (unit, pgTAP, e2e) to pass, so a release cannot break the live site. Public repo, `docs/adr/`.
 22. **Data-pull jobs in Python.** **Decided.** Schedule import, weekly spread lock, and score sync are Python functions deployed on Vercel from the same repo (`api/jobs/*.py`). No extra cost on Hobby, same pg_cron trigger. See §3 "Why this and not X" and §5.
 
 ---
