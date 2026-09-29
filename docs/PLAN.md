@@ -134,7 +134,8 @@ All tables in schema `public`, `id uuid primary key default gen_random_uuid()`, 
 | `picks` | A wager. | `league_id`, `user_id`, `game_id`, `line_id`, `side enum(home, away)`, `wager_cents int > 0`, `status enum(open, won, lost, push, void)`, `settled_at`, unique `(league_id, user_id, game_id)` |
 | `ledger` | Every balance movement; balance = sum. | `league_id`, `user_id`, `week_id`, `pick_id null`, `kind enum(initial, wager, payout, refund, adjustment)`, `amount_cents int` (signed), `note` |
 | `app_settings` | Site-wide config, single row. | `spread_lock_day int`, `spread_lock_time time`, `timezone text`, `default_starting_balance_cents`, `hide_picks_until_kickoff bool default false`, `odds_provider`, `score_poll_interval_s` |
-| `job_runs` | Observability for cron jobs. | `job_name`, `started_at`, `finished_at`, `status`, `detail jsonb` |
+| `job_runs` | Observability for cron jobs. | `job_name`, `request_id`, `started_at`, `finished_at`, `status`, `detail jsonb` |
+| `audit_log` | Append-only before/after history for sensitive tables (picks, memberships, league and site settings, profiles). Populated only by the `audit_row()` trigger; update/delete blocked for every role. | `table_name`, `row_id`, `action`, `actor_id`, `actor_role`, `request_id`, `old_data jsonb`, `new_data jsonb` |
 
 **Derived views**
 - `league_balances` — `select league_id, user_id, sum(amount_cents)` from ledger. Materialized in Phase 1 only if measured slow (it will not be, at this size).
@@ -152,6 +153,7 @@ All tables in schema `public`, `id uuid primary key default gen_random_uuid()`, 
 | week_budgets | own rows + same-league members' rows | service role via `open_week()` | — | — |
 | picks | own always; same-league rows where `hide_picks_until_kickoff = false` OR `game.kickoff_at <= now()` | via `place_pick()` function only (rejects eliminated members) | via `place_pick()`/`delete_pick()` only, before kickoff | same |
 | ledger | own rows; same-league members' rows | service role via settlement | — | — |
+| audit_log | own actions, own rows, or site admin | trigger only (`security definer`) | blocked by trigger | blocked by trigger |
 | storage `logos` | public read | path must start with `auth.uid()` | same | same |
 
 Site-admin routes check `profiles.is_site_admin` **and** RLS policies also gate the admin-only tables, so a leaked anon key cannot elevate.
@@ -233,7 +235,7 @@ At scale target (b), steps 1–3 are the expected ceiling: **roughly $60/mo**. N
 
 ---
 
-## 8. Security
+## 8. Security, logging and auditability
 
 - **RLS on every table**, default deny, policies as in §4. A `pgTAP` test suite asserts each policy (e.g. "user A cannot read user B's unlocked pick").
 - **All betting rules enforced in Postgres functions** (`security definer`, `search_path` pinned) so no client bug or crafted request can overspend or bet after kickoff.
@@ -244,6 +246,8 @@ At scale target (b), steps 1–3 are the expected ceiling: **roughly $60/mo**. N
 - **Uploads:** MIME + magic-byte check, size cap, path scoped to `auth.uid()/`, no user-controlled filenames.
 - **Rate limits:** Supabase Auth's built-in limits on sign-in; Vercel WAF basic rules. Invite codes are 8 chars from a 32-symbol alphabet (~1e12 space) and can be rotated by the commissioner.
 - **Dependency hygiene:** Dependabot, `npm audit` in CI, lockfile committed.
+- **Structured logging (ADR 0003):** both runtimes emit one JSON object per line with the same field names (`ts`, `level`, `msg`, `request_id`, `job`). Every job invocation carries a request id through its logs, its response and its `job_runs` row. Never log secrets, tokens or emails.
+- **Audit trail (ADR 0003):** `audit_log` records who changed what and when, with full before/after rows, for picks, memberships, leagues, settings and profiles. Disputes ("I picked the other side") are answered by reading the pick's history. Members see rows for their own actions; site admins see everything. The admin panel gets an audit viewer in Phase 1.
 
 ---
 
@@ -292,7 +296,8 @@ Calendar (2026 season, spreads lock Tuesdays):
 Goal: an empty but production-shaped app deployed with CI, migrations, auth and RLS working end to end.
 - Next.js 15 + TypeScript strict + Tailwind + shadcn/ui; ESLint, Prettier, Husky pre-commit.
 - Supabase CLI: local stack via Docker, SQL migrations in `supabase/migrations/`, `supabase gen types` wired to `npm run db:types`.
-- Migration 0001: `profiles`, `app_settings`, `job_runs`, RLS enabled, signup trigger.
+- Migration 0001: `profiles`, `app_settings`, `job_runs`, `audit_log` + `audit_row()` trigger, RLS enabled, column-level grants, signup trigger.
+- Structured JSON loggers in both runtimes with request ids.
 - Auth pages: sign in / sign up / reset, Google button, remember-me checkbox, protected `/dashboard` shell.
 - Python toolchain: `uv` for deps, `ruff` lint/format, `pytest`; `api/jobs/health.py` as the first deployed function proving the Vercel Python runtime and job secret work.
 - CI (GitHub Actions): ESLint + tsc + Vitest for the app, ruff + pytest for `api/`, `supabase db reset` + pgTAP, Playwright smoke on preview URL.
@@ -308,10 +313,10 @@ Goal: a league can run a full week without you touching the database. Ordered so
 2. **Leagues:** create league, invite code, join by code, member list, multiple commissioners (promote/demote), commissioner settings (name, starting balance, rotate code, remove member).
 3. **Spread lock job** + `open_week()` + admin settings for day/time/timezone/default balance/pick visibility, manual "re-pull now" and per-game re-pull.
 4. **Picks UI:** mobile-first weekly sheet: each game shows both teams, spread, kickoff in local time, tap-to-pick side, wager input with "available this week" always visible; edit/delete before kickoff; locked state after.
-5. **Settlement:** `settle_game()` + hourly `sync-finals` job (finals only; live comes in Phase 2). Ledger, balances, week_budgets, elimination.
+5. **Settlement:** `settle_game()` + hourly `sync-finals` job (finals only; live comes in Phase 2). Ledger, balances, week_budgets, elimination. Audit trigger attached to `picks`, `league_members`, `leagues`.
 6. **Dashboard:** leaderboard (rank, logo, name, balance, week delta, eliminated badge), my picks this week with result badges, **league news feed** (joins, eliminations, spreads locked, week settled, commissioner notes), quick links to pick/view spreads.
 7. **Profile:** display name, logo upload with client-side crop/resize.
-8. **Admin panel:** settings form, job runs table with re-run buttons, season editor (`playoffs_start_at`), league list.
+8. **Admin panel:** settings form, job runs table with re-run buttons, season editor (`playoffs_start_at`), league list, audit viewer (search by member or pick).
 9. **Season end:** nightly job marks leagues complete and records the winner; dashboard shows a winner banner and news event.
 10. **Tests:** Vitest (payout, budget, elimination display), pytest with recorded API fixtures (ESPN/Odds parsing, spread matching, no live network in CI), pgTAP (every RLS policy, `place_pick` rejections incl. eliminated member), Playwright (sign up → create league → join with second user → pick → simulate final → leaderboard and news feed update).
 
@@ -341,11 +346,12 @@ pick-em/
 │  ├─ (app)/ dashboard, leagues/[id]/picks, leagues/[id]/spreads, profile
 │  ├─ admin/
 │  └─ api/revalidate/        # cache-tag invalidation, called by the Python jobs
-├─ api/                      # Python functions, deployed by Vercel alongside the app
-│  ├─ jobs/ lock_spreads.py, sync_scores.py, sync_schedule.py, close_season.py, health.py
-│  ├─ pickem/                # shared package: providers/ (espn.py, odds_api.py), db.py, models.py, cover_probability.py
-│  ├─ tests/                 # pytest + recorded JSON fixtures
-│  ├─ requirements.txt, pyproject.toml (ruff, pytest config)
+├─ api/jobs/                 # Vercel Python functions: thin wrappers only (every file here is an endpoint)
+│     lock_spreads.py, sync_scores.py, sync_schedule.py, close_season.py, health.py
+├─ pickem/                   # Python shared package: vercel.py (adapter), log.py, settings.py,
+│     jobs/ (implementations), providers/ (espn.py, odds_api.py), cover_probability.py
+├─ tests/python/             # pytest + recorded JSON fixtures
+├─ pyproject.toml, uv.lock, requirements.txt (exported from uv.lock for Vercel)
 ├─ components/               # UI (shadcn) + feature components
 ├─ lib/
 │  ├─ supabase/ (server, client, middleware helpers)
@@ -355,7 +361,8 @@ pick-em/
 │  ├─ migrations/            # SQL, one file per change
 │  ├─ tests/                 # pgTAP
 │  └─ seed.sql               # teams, a demo season
-├─ tests/ e2e/ (Playwright)
+├─ tests/e2e/                # Playwright
+├─ scripts/db/               # local Postgres test harness (no Docker)
 ├─ docs/ PLAN.md, adr/
 └─ .github/workflows/ ci.yml, backup.yml
 ```
