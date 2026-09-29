@@ -16,6 +16,12 @@ Multiple leagues run at once, joined by invite code.
 | Data-pull jobs | Python 3.12 functions on Vercel (`api/jobs/*.py`), shared code in `pickem/` |
 | Tests | Vitest (TS units), pytest (Python), pgTAP (every RLS policy), Playwright (e2e) |
 
+## Branching
+
+- `main` — what is deployed to production. Only receives merges from `dev` at milestones.
+- `dev` — integration branch. Feature branches (`phase-1/leagues`, `fix/...`) open PRs against `dev`.
+- CI runs on every PR and on pushes to `dev` and `main`. Vercel builds previews for PRs and `dev`, production from `main`.
+
 ## Local development
 
 Prerequisites: Node 22 + pnpm, Python 3.12 + [uv](https://docs.astral.sh/uv/), Docker (for the
