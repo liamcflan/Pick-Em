@@ -1,0 +1,10 @@
+# gitleaks configuration. Extends the default rule set; only the committed example env file is
+# allowlisted because it holds placeholders by design. Real env files are gitignored.
+title = "pick-em"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholder values in the committed example env file"
+paths = ['''^\.env\.example$''']
