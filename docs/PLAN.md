@@ -2,7 +2,7 @@
 
 NFL spread pick'em for friend groups. Everyone starts a season with a bankroll (default $10,000), bets against locked weekly spreads, and whoever has the most when the playoffs start wins the league.
 
-Status: **v0.2 — decisions locked 2026-09-29. Target: live for the rest of the 2026 season. Phase 0 starts now.**
+Status: **v0.3 — Phase 0 shipped (PR #2). Game rules replaced by the league's official rules in [docs/RULES.md](RULES.md); §1–§2 updated to match.**
 
 ---
 
@@ -29,16 +29,21 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
 
 ### Game rules
 
-1. **Payout math.** **Decided: even money.** Bet 100, win 100. The actual price on the spread is ignored for now. Schema keeps a `price` column on lines so -110 can be turned on later without a migration.
-2. **Weekly budget rule.** **Decided.** At week open, `weekly_budget = current balance`. Every wager that week comes out of the budget. Thursday winnings raise your balance but not your budget. Losses deduct only the wager, nothing more.
-3. **Pick visibility.** **Decided: site-admin setting `hide_picks_until_kickoff`, default OFF.** Picks are visible to league-mates immediately; flipping the setting hides them until that game kicks off.
-4. **Zero balance.** **Decided: eliminated.** A member who hits $0 is out for the season: they stay on the leaderboard flagged "Eliminated (wk N)", can no longer bet, and an elimination event is posted to the league news feed on every member's dashboard.
-5. **Bet limits.** **Default:** min $1, max = remaining weekly budget, one pick per game, editable until kickoff.
-6. **Pushes.** **Default:** wager refunded.
-7. **Lock time.** **Default:** each pick locks at its game's kickoff.
-8. **Spread lock day/time.** **Default:** Tuesday 10:00 AM America/New_York, configurable in admin.
-9. **Season boundary.** **Default:** regular season through week 18; winner declared when `playoffs_start_at` passes. Every regular-season game is bettable.
-10. **Which season.** **Decided: rest of 2026.** Today is week 4. Plan: Phase 0 + Phase 1 core in ~2 weeks, dry run with a few friends in week 6 (spreads lock Tue 13 Oct), full go-live week 7 (spreads lock Tue 20 Oct). Balances start fresh at go-live. Phase 2 (live scores) lands during the season.
+Superseded by the league's official rules in [docs/RULES.md](RULES.md) (received 2026-09-29). Decisions below restate them in implementation terms; anything marked **Open** needs an answer and has a default.
+
+1. **Payout math.** **Decided: even money.** Bet 1k, win 1k. `price` column kept on lines for the future.
+2. **Bet units.** **Decided:** wagers are whole thousands (1k, 2k, …). Min bet 1k. Max = remaining weekly budget. One pick per game per player, editable until that game's deadline. Balances are therefore always whole thousands.
+3. **Weekly budget.** **Decided.** `weekly_budget = balance at week open`; wagers deduct from it; winnings are paid at week end and never raise the current week's budget.
+4. **Minimum weekly action.** **Decided:** at least 1k must be bet each week unless the player's bye is used that week.
+5. **Pushes.** **Decided: a push is a loss.**
+6. **Deadline.** **Decided:** each game locks at 11:59 PM America/New_York on the calendar day before its kickoff. **Open:** confirm Eastern is the reference timezone for everyone (default: yes).
+7. **Spread source.** **Decided:** Wednesday morning New York Post. **Open:** the Post has no API. Default: the app pulls consensus lines Wednesday 8:00 AM ET (configurable) and a commissioner can edit any line to match the paper before the first deadline; edits are audited. Alternative: commissioner types all lines each week with the API values pre-filled.
+8. **Bye week.** **Decided:** one per player per season, usable in weeks 1–13 only. A week with zero bets by the deadline of the week's last game consumes the bye automatically. **Open:** can a player also declare a bye explicitly in the UI (default: yes, a "Take my bye this week" button, reversible until the last deadline)?
+9. **Forced bet.** **Decided:** no bets and no bye left (or week ≥ 14) → system places 1k on the underdog of the week's last game at that game's deadline. Recorded as system-placed in the audit log and shown on the dashboard.
+10. **Elimination.** **Decided:** balance 0 → eliminated, leaderboard badge, news-feed event.
+11. **Winner.** **Decided:** last player with money wins immediately; otherwise most money at the end of the regular season (week 18). `playoffs_start_at` stays as the season-end marker.
+12. **Void games.** **Decided:** abandoned/not-completed games settle as `void` and the wager is refunded. Admin can void a game manually.
+13. **Which season.** **Decided: rest of 2026.** Plan: dry run week 6 (lines Wed 14 Oct), go-live week 7 (lines Wed 21 Oct).
 
 ### Product
 
@@ -64,18 +69,20 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
 
 ## 2. Game rules spec
 
-- A **season** has weeks 1–18 and a `playoffs_start_at`. Each **league** belongs to one season.
-- A **league** has a starting balance (default $10,000). Each **member** gets that balance in that league only, credited as an `initial` ledger entry when they join.
-- Each week, at the configured pull time, the app **locks spreads** for every game in that week. Lines are immutable; a re-pull creates a new line version. Existing picks keep the line they were placed on.
-- At week open, each member's **weekly budget** is snapshotted from their balance. `available = weekly_budget − Σ(wagers placed this week)`.
-- A **pick** = league + member + game + side + wager + the line version at placement. Editable or deletable until kickoff. The server rejects any wager exceeding `available`, any pick after kickoff, and any pick from an eliminated member.
-- On final: covered → member credited `2 × wager`; lost → nothing; push → wager refunded. Every movement is a **ledger** row; balance is always `Σ ledger`.
-- A member whose balance reaches **$0** with no open picks is **eliminated**: `league_members.eliminated_at` is set, a `league_events` row (`member_eliminated`) is posted, they cannot bet, and the leaderboard shows the badge.
-- **Pick visibility** follows the site setting `hide_picks_until_kickoff` (default off).
-- Leaderboard ranks by balance, then by fewer total dollars risked. Eliminated members sort last by elimination week.
-- When `now ≥ playoffs_start_at`, the league is frozen, the top balance is recorded as the winner, and a `season_complete` event is posted.
+Implementation reading of [docs/RULES.md](RULES.md).
 
----
+- A **season** has weeks 1–18. Each **league** belongs to one season and has its own bankrolls.
+- Every **member** starts with the league's starting balance (default $10,000) as an `initial` ledger entry. Money is stored in cents but all wagers are validated as multiples of 100,000 cents (1k).
+- **Lines** are pulled Wednesday morning (configurable, default 8:00 AM ET). A commissioner may edit a line until that game's deadline; every version is kept, and a pick keeps the line it was placed on.
+- Each game's **deadline** is 23:59 America/New_York on the day before kickoff. `place_pick` rejects anything after it.
+- At week open each member's **weekly budget** is snapshotted from their balance. `available = budget − Σ wagers this week`. Wagers are whole thousands, ≥ 1k, ≤ available, one pick per game.
+- **Settlement** per game on final: covered → `+2 × wager`; lost or **push** → nothing; `void` (abandoned) → wager refunded. Results are shown as pending until the week's last game is final, at which point a `week_settled` event posts and balances are official.
+- **Weekly action check**, run at the deadline of the week's last game, for every non-eliminated member with zero picks that week:
+  - week ≤ 13 and bye unused → mark bye used for this week (`league_members.bye_week_id`), post event;
+  - otherwise → system places a 1k pick on the underdog of the week's last game, audited as system-placed, post event.
+- **Elimination:** balance 0 after week settlement → `eliminated_at`, badge, event, no further picks.
+- **Winner:** after any week settles, if exactly one non-eliminated member remains, the league completes and they win. Otherwise at season end the highest balance wins (ties broken by fewer total dollars risked).
+- Pick visibility follows the site setting `hide_picks_until_kickoff` (default off; when on, hidden until the game's deadline passes).
 
 ## 3. Architecture
 
@@ -123,17 +130,17 @@ All tables in schema `public`, `id uuid primary key default gen_random_uuid()`, 
 |---|---|---|
 | `profiles` | One per auth user. | `id` (= `auth.users.id`), `display_name`, `avatar_path`, `is_site_admin bool` |
 | `seasons` | NFL seasons. | `year int unique`, `regular_season_weeks int (18)`, `playoffs_start_at`, `is_active` |
-| `weeks` | 18 per season. | `season_id`, `week_number`, `opens_at`, `spread_lock_at`, `first_kickoff_at`, `last_kickoff_at`, unique `(season_id, week_number)` |
+| `weeks` | 18 per season. | `season_id`, `week_number`, `opens_at`, `spread_lock_at`, `first_kickoff_at`, `last_game_id`, `last_deadline_at` (deadline of the last game; drives the bye/forced-bet job), `settled_at`, unique `(season_id, week_number)` |
 | `teams` | 32 rows, seeded. | `abbreviation unique`, `name`, `logo_url`, `espn_team_id` |
-| `games` | One per NFL game. | `week_id`, `home_team_id`, `away_team_id`, `kickoff_at`, `espn_event_id unique`, `status enum(scheduled, in_progress, final, postponed, cancelled)`, `home_score`, `away_score`, `period`, `clock`, `last_synced_at` |
-| `lines` | Immutable spread versions. | `game_id`, `home_spread numeric(4,1)` (negative = home favored), `price int default -110` (stored, unused while payout is even money), `source`, `locked_at`, `is_current bool` (partial unique index: one current per game) |
+| `games` | One per NFL game. | `week_id`, `home_team_id`, `away_team_id`, `kickoff_at`, `deadline_at` (23:59 ET the day before; generated), `espn_event_id unique`, `status enum(scheduled, in_progress, final, postponed, void)`, `home_score`, `away_score`, `period`, `clock`, `last_synced_at` |
+| `lines` | Immutable spread versions. | `game_id`, `home_spread numeric(4,1)` (negative = home favored), `price int default -110` (stored, unused while payout is even money), `source enum(api, commissioner)`, `set_by uuid null`, `locked_at`, `is_current bool` (partial unique index: one current per game) |
 | `leagues` | A friend group in a season. | `season_id`, `name`, `invite_code text unique`, `created_by`, `starting_balance_cents int`, `status enum(open, locked, complete)`, `winner_user_id` |
-| `league_members` | Membership + role; many commissioners allowed. | PK `(league_id, user_id)`, `role enum(member, commissioner)`, `joined_week_id`, `eliminated_at`, `eliminated_week_id` |
-| `league_events` | News feed shown on every member's dashboard. | `league_id`, `kind enum(member_joined, member_eliminated, week_settled, spreads_locked, season_complete, commissioner_note)`, `actor_user_id null`, `payload jsonb` |
+| `league_members` | Membership + role; many commissioners allowed. | PK `(league_id, user_id)`, `role enum(member, commissioner)`, `joined_week_id`, `bye_week_id null` (the one bye, weeks 1–13), `eliminated_at`, `eliminated_week_id` |
+| `league_events` | News feed shown on every member's dashboard. | `league_id`, `kind enum(member_joined, member_eliminated, bye_used, forced_pick, line_edited, week_settled, spreads_locked, season_complete, commissioner_note)`, `actor_user_id null`, `payload jsonb` |
 | `week_budgets` | Snapshot of bankroll at week open. | PK `(league_id, user_id, week_id)`, `budget_cents int` |
-| `picks` | A wager. | `league_id`, `user_id`, `game_id`, `line_id`, `side enum(home, away)`, `wager_cents int > 0`, `status enum(open, won, lost, push, void)`, `settled_at`, unique `(league_id, user_id, game_id)` |
+| `picks` | A wager. | `league_id`, `user_id`, `game_id`, `line_id`, `side enum(home, away)`, `wager_cents int` (check: multiple of 100000, ≥ 100000), `placed_by enum(member, system)` (forced bets), `status enum(open, won, lost, push, void)`, `settled_at`, unique `(league_id, user_id, game_id)` |
 | `ledger` | Every balance movement; balance = sum. | `league_id`, `user_id`, `week_id`, `pick_id null`, `kind enum(initial, wager, payout, refund, adjustment)`, `amount_cents int` (signed), `note` |
-| `app_settings` | Site-wide config, single row. | `spread_lock_day int`, `spread_lock_time time`, `timezone text`, `default_starting_balance_cents`, `hide_picks_until_kickoff bool default false`, `odds_provider`, `score_poll_interval_s` |
+| `app_settings` | Site-wide config, single row. | `spread_lock_day int` (default 3 = Wednesday), `spread_lock_time time` (default 08:00), `timezone text` (America/New_York), `default_starting_balance_cents`, `bet_unit_cents` (default 100000), `hide_picks_until_kickoff bool default false`, `odds_provider`, `score_poll_interval_s` |
 | `job_runs` | Observability for cron jobs. | `job_name`, `request_id`, `started_at`, `finished_at`, `status`, `detail jsonb` |
 | `audit_log` | Append-only before/after history for sensitive tables (picks, memberships, league and site settings, profiles). Populated only by the `audit_row()` trigger; update/delete blocked for every role. | `table_name`, `row_id`, `action`, `actor_id`, `actor_role`, `request_id`, `old_data jsonb`, `new_data jsonb` |
 
@@ -172,14 +179,17 @@ All three jobs below are Python (`api/jobs/`). Each validates the `X-Job-Secret`
 5. Revalidates the Next.js cache tag `spreads:{week}`.
 
 **Placing a pick (server action → `place_pick(league, game, side, wager)`)**
-- In one transaction with `select … for update` on the member's budget row: check membership, `game.kickoff_at > now()`, `game.status = scheduled`, `wager ≤ budget − Σ open wagers`, upsert the pick with the current `line_id`, write the `wager` ledger entry (or adjust if editing). Returns the new available amount. The UI updates optimistically and reverts on error.
+- In one transaction with `select … for update` on the member's budget row: check membership and not eliminated, `now() < game.deadline_at`, `game.status = scheduled`, `wager` is a multiple of the bet unit and ≥ one unit, `wager ≤ budget − Σ open wagers`, upsert the pick with the current `line_id`, write the `wager` ledger entry (or adjust if editing). Returns the new available amount. The UI updates optimistically and reverts on error.
+
+**Weekly action check (cron: at each week's `last_deadline_at`; Python)**
+- For every league in the season and every non-eliminated member with zero picks this week: if `week_number ≤ 13` and `bye_week_id is null` → set the bye and post `bye_used`; else → `place_system_pick(member, last_game, underdog, 1 unit)` and post `forced_pick`. Idempotent per (league, member, week).
 
 **Score sync (cron: every minute; Python; exits instantly if no game is live or within 30 min of kickoff)**
-- Fetch ESPN scoreboard once (one request covers every game). Update `games` rows that changed. When a game turns `final`, call `settle_game(game_id)`: for every open pick on that game compute won/lost/push against the pick's *own* `line_id`, write payout/refund ledger rows, mark picks settled. Then for each affected member: if balance = 0 and no open picks, set `eliminated_at` and insert a `member_eliminated` league event. Idempotent: re-running on a settled game is a no-op.
+- Fetch ESPN scoreboard once (one request covers every game). Update `games` rows that changed. When a game turns `final`, call `settle_game(game_id)`: for every open pick on that game compute won / lost (push counts as lost) / void against the pick's *own* `line_id`, write payout or refund ledger rows, mark picks settled. When the week's last game is final, `settle_week(week_id)` posts `week_settled`, runs elimination, and checks for a sole survivor. Then for each affected member: if balance = 0 and no open picks, set `eliminated_at` and insert a `member_eliminated` league event. Idempotent: re-running on a settled game is a no-op.
 - Phase 2: also store `home_win_probability` from ESPN and compute cover probability per open pick in Python (§7), written to `picks.cover_probability` so the dashboard only reads.
 
 **Season end**
-- Nightly job: if `now ≥ playoffs_start_at` and league is `open`, set `status = complete`, `winner_user_id = top of leaderboard`.
+- After any `settle_week`: if exactly one non-eliminated member remains, complete the league with them as winner. Nightly job: if `now ≥ playoffs_start_at` and league is `open`, set `status = complete`, `winner_user_id = top of leaderboard`.
 
 ---
 
@@ -311,14 +321,14 @@ Goal: an empty but production-shaped app deployed with CI, migrations, auth and 
 Goal: a league can run a full week without you touching the database. Ordered so the dry run on 13 Oct has items 1–6.
 1. **Reference data:** seasons, weeks, teams, games; Python `sync-schedule` job importing the 2026 schedule from ESPN; admin button to run it.
 2. **Leagues:** create league, invite code, join by code, member list, multiple commissioners (promote/demote), commissioner settings (name, starting balance, rotate code, remove member).
-3. **Spread lock job** + `open_week()` + admin settings for day/time/timezone/default balance/pick visibility, manual "re-pull now" and per-game re-pull.
-4. **Picks UI:** mobile-first weekly sheet: each game shows both teams, spread, kickoff in local time, tap-to-pick side, wager input with "available this week" always visible; edit/delete before kickoff; locked state after.
-5. **Settlement:** `settle_game()` + hourly `sync-finals` job (finals only; live comes in Phase 2). Ledger, balances, week_budgets, elimination. Audit trigger attached to `picks`, `league_members`, `leagues`.
+3. **Spread lock job** (Wednesday morning) + `open_week()` + admin settings for day/time/timezone/default balance/bet unit/pick visibility, manual "re-pull now", and **commissioner line editing** to match the New York Post (audited, `line_edited` event).
+4. **Picks UI:** mobile-first weekly sheet: each game shows both teams, spread, kickoff and **deadline** in local time, tap-to-pick side, wager stepper in 1k units with "available this week" always visible; edit/delete before the deadline; locked state after; "take my bye" toggle (weeks 1–13).
+5. **Settlement:** `settle_game()` (push = loss, void = refund) + `settle_week()` + hourly `sync-finals` job (finals only; live comes in Phase 2). **Weekly action check** job (bye / forced 1k underdog). Ledger, balances, week_budgets, elimination, sole-survivor win. Audit trigger attached to `picks`, `league_members`, `leagues`, `lines`.
 6. **Dashboard:** leaderboard (rank, logo, name, balance, week delta, eliminated badge), my picks this week with result badges, **league news feed** (joins, eliminations, spreads locked, week settled, commissioner notes), quick links to pick/view spreads.
 7. **Profile:** display name, logo upload with client-side crop/resize.
 8. **Admin panel:** settings form, job runs table with re-run buttons, season editor (`playoffs_start_at`), league list, audit viewer (search by member or pick).
 9. **Season end:** nightly job marks leagues complete and records the winner; dashboard shows a winner banner and news event.
-10. **Tests:** Vitest (payout, budget, elimination display), pytest with recorded API fixtures (ESPN/Odds parsing, spread matching, no live network in CI), pgTAP (every RLS policy, `place_pick` rejections incl. eliminated member), Playwright (sign up → create league → join with second user → pick → simulate final → leaderboard and news feed update).
+10. **Tests:** Vitest (payout, budget, deadline math incl. DST), pytest with recorded API fixtures (ESPN/Odds parsing, spread matching, no live network in CI), pgTAP (every RLS policy; `place_pick` rejections: after deadline, non-unit wager, over budget, eliminated member; push = loss; void = refund; bye and forced-pick logic), Playwright (sign up → create league → join with second user → pick → simulate final → leaderboard and news feed update).
 
 **Done when:** two test users in two different leagues can play a simulated week end to end on the deployed site, and every table has RLS tests.
 
