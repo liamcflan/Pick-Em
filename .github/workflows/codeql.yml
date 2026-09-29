@@ -9,6 +9,7 @@ on:
 
 permissions:
   security-events: write
+  actions: read # codeql-action reads the workflow run to attach results
   contents: read
 
 jobs:
