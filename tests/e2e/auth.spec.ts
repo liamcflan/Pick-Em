@@ -75,8 +75,10 @@ test("unchecking remember me yields session cookies", async ({ page, context }) 
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Sign out" }).click();
+  // Wait for the sign-out action to finish and land on /sign-in; navigating earlier races the
+  // session cookie removal and the proxy bounces a still-signed-in user back to the dashboard.
+  await expect(page).toHaveURL(/\/sign-in$/);
 
-  await page.goto("/sign-in");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("correct-horse-battery");
   await page.getByLabel("Remember me on this device").uncheck();
