@@ -58,6 +58,7 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
 19. **Live update mechanism.** **Default:** polling first, Supabase Realtime in Phase 2.
 20. **Scale target.** **Decided: design for ~5,000 users / ~500 leagues, run on free tiers sized for 20.** Every choice in §6b is checked against that.
 21. **Repo hygiene.** **Default:** public repo, conventional commits, PRs with CI, `docs/adr/`.
+22. **Data-pull jobs in Python.** **Decided.** Schedule import, weekly spread lock, and score sync are Python functions deployed on Vercel from the same repo (`api/jobs/*.py`). No extra cost on Hobby, same pg_cron trigger. See §3 "Why this and not X" and §5.
 
 ---
 
@@ -82,9 +83,12 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
  Browser (phone/desktop)
    │  HTTPS
    ▼
- Next.js 15 (App Router, RSC, Server Actions)  ── Vercel Hobby, single US-East region
-   │  supabase-js (anon key + user JWT → RLS enforced)
-   │  service-role only inside /api/jobs/* routes (secret header)
+ Vercel Hobby, single US-East region
+   ├─ Next.js 15 (App Router, RSC, Server Actions) — all user-facing pages and actions
+   │    supabase-js (anon key + user JWT → RLS enforced)
+   └─ Python 3.12 functions at /api/jobs/* — schedule import, spread lock, score sync
+        supabase-py with service-role key; only reachable with the job secret header
+   │
    ▼
  Supabase project (US-East)
    ├─ Postgres 15 + RLS + SQL functions (place_pick, settle_game, open_week)
@@ -104,7 +108,8 @@ Answers from Liam are marked **Decided**. Items with no answer yet use the state
 | Supabase | Postgres with **native RLS tied to `auth.uid()`**, Auth, Storage and cron in one free project. Exactly matches your RLS/data-modeling ask. | Neon + Auth.js + R2: three vendors to wire, RLS possible but you own the JWT→role plumbing. |
 | supabase-js with user JWT (not an ORM as a superuser) | The app talks to Postgres *as the user*, so RLS is the real authorization layer, not decoration. | Drizzle/Prisma as a service role bypasses RLS unless you add per-request `SET ROLE`; easy to get wrong. |
 | Critical writes as SQL functions | `place_pick` and `settle_game` run inside one transaction with row locks, so budgets can't be overspent by double-submits. | Doing it in JS with two round-trips leaves a race. |
-| pg_cron → pg_net → Next.js route | Vercel Hobby cron is capped at once per day, which is useless for score polling. pg_cron runs every minute for free and keeps all job logic in the one TypeScript codebase. | Supabase Edge Functions (a second Deno codebase); GitHub Actions cron (5-min minimum, unreliable timing). |
+| pg_cron → pg_net → job function | Vercel Hobby cron is capped at once per day, which is useless for score polling. pg_cron runs every minute for free. | Supabase Edge Functions (Deno only, no Python); GitHub Actions cron (5-min minimum, unreliable timing). |
+| Data-pull jobs in **Python** on Vercel | Same repo, same deploy, $0. Python is the natural language for fetch/normalize/transform work and for the cover-probability model, and it shows a second language in the portfolio. Boundary is clean: Python writes `games`, `lines`, `job_runs`; the money logic stays in SQL functions. | A separate Python service (Render/Fly/Railway) adds a vendor and $5+/mo; Modal's free credits would work but is a third vendor. |
 | Money as `integer` cents | No float rounding, cheap comparisons. | `numeric` is fine too but noisier in TS. |
 | UUIDs everywhere, v7 where available | Globally unique, safe to expose in URLs, time-ordered for index locality. | Serial ints leak counts and collide across leagues. |
 
@@ -155,19 +160,21 @@ Site-admin routes check `profiles.is_site_admin` **and** RLS policies also gate 
 
 ## 5. Core flows
 
+All three jobs below are Python (`api/jobs/`). Each validates the `X-Job-Secret` header, writes a `job_runs` row, and calls `POST /api/revalidate` on the Next.js side with the cache tags it touched.
+
 **Weekly spread lock (cron: configured day/time)**
-1. pg_cron fires `POST /api/jobs/lock-spreads` with a bearer secret.
-2. Route fetches the week's games from ESPN (creates any missing `games` rows), fetches spreads from The Odds API, matches by team + kickoff.
+1. pg_cron fires `POST /api/jobs/lock-spreads` with the job secret.
+2. The function fetches the week's games from ESPN (creates any missing `games` rows), fetches spreads from The Odds API, matches by team + kickoff.
 3. Inserts a new `lines` row per game, flips `is_current`. Never edits an existing line.
 4. Calls `open_week(week_id)`: for every league in the active season and every member, inserts `week_budgets` with their current balance.
-5. Writes a `job_runs` row; revalidates the Next.js cache tag `spreads:{week}`.
+5. Revalidates the Next.js cache tag `spreads:{week}`.
 
 **Placing a pick (server action → `place_pick(league, game, side, wager)`)**
 - In one transaction with `select … for update` on the member's budget row: check membership, `game.kickoff_at > now()`, `game.status = scheduled`, `wager ≤ budget − Σ open wagers`, upsert the pick with the current `line_id`, write the `wager` ledger entry (or adjust if editing). Returns the new available amount. The UI updates optimistically and reverts on error.
 
-**Score sync (cron: every minute; exits instantly if no game is live or within 30 min of kickoff)**
+**Score sync (cron: every minute; Python; exits instantly if no game is live or within 30 min of kickoff)**
 - Fetch ESPN scoreboard once (one request covers every game). Update `games` rows that changed. When a game turns `final`, call `settle_game(game_id)`: for every open pick on that game compute won/lost/push against the pick's *own* `line_id`, write payout/refund ledger rows, mark picks settled. Then for each affected member: if balance = 0 and no open picks, set `eliminated_at` and insert a `member_eliminated` league event. Idempotent: re-running on a settled game is a no-op.
-- Phase 2: also store `home_win_probability` from ESPN and compute cover probability (§7).
+- Phase 2: also store `home_win_probability` from ESPN and compute cover probability per open pick in Python (§7), written to `picks.cover_probability` so the dashboard only reads.
 
 **Season end**
 - Nightly job: if `now ≥ playoffs_start_at` and league is `open`, set `status = complete`, `winner_user_id = top of leaderboard`.
@@ -221,7 +228,7 @@ At scale target (b), steps 1–3 are the expected ceiling: **roughly $60/mo**. N
 
 - **Scores/status:** ESPN scoreboard endpoint (`site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`). One call returns every game with score, quarter, clock, possession, and a pre-game spread. Unofficial, so the client is wrapped in a `ScoreProvider` interface with retries and a circuit breaker; if it fails for 15 min, the dashboard shows "scores delayed" rather than stale numbers presented as live.
 - **Win probability:** ESPN publishes an in-game `probabilities` feed per event. Useful as-is for "will my team win".
-- **Cover probability (what a spread bettor actually cares about):** compute in-house. Model: remaining-margin ~ Normal(μ, σ) where μ = `(pregame_spread) × fraction_of_game_remaining` and σ = `13.5 × sqrt(fraction_of_game_remaining)` (13.5 ≈ historical std dev of NFL final margins). `P(cover) = P(current_margin + remaining_margin > −pick_spread)`. Pure function, unit-tested, ~20 lines. It is a well-known approximation (Stern 1991) and a good talking point in an interview; it can later be replaced by a logistic model trained on play-by-play if you want to go further.
+- **Cover probability (what a spread bettor actually cares about):** compute in-house, in Python inside the score-sync job (numpy/scipy `norm.cdf`), stored on the pick row. Model: remaining-margin ~ Normal(μ, σ) where μ = `(pregame_spread) × fraction_of_game_remaining` and σ = `13.5 × sqrt(fraction_of_game_remaining)` (13.5 ≈ historical std dev of NFL final margins). `P(cover) = P(current_margin + remaining_margin > −pick_spread)`. Pure function, pytest-covered, ~20 lines. It is a well-known approximation (Stern 1991) and a good talking point in an interview; it can later be replaced by a logistic model trained on play-by-play if you want to go further.
 - **Delivery:** Phase 2a polls every 30 s while a game the user has a pick in is live; Phase 2b switches to Supabase Realtime on `games` (free tier: 200 concurrent connections, 2M messages/month; a full Sunday for 20 users is ~50k messages).
 
 ---
@@ -231,7 +238,8 @@ At scale target (b), steps 1–3 are the expected ceiling: **roughly $60/mo**. N
 - **RLS on every table**, default deny, policies as in §4. A `pgTAP` test suite asserts each policy (e.g. "user A cannot read user B's unlocked pick").
 - **All betting rules enforced in Postgres functions** (`security definer`, `search_path` pinned) so no client bug or crafted request can overspend or bet after kickoff.
 - **Auth:** Supabase Auth with `@supabase/ssr` cookies. "Remember me" = persistent refresh-token cookie (default 30-day sliding, configurable); unchecked = session cookie. Refresh-token rotation and reuse detection are on by default.
-- **Secrets:** service-role key and job secret live only in Vercel env vars and are only imported in `/api/jobs/*`, guarded by an ESLint rule (`no-restricted-imports` outside that folder). Anon key + URL are the only values shipped to the browser.
+- **Secrets:** service-role key and job secret live only in Vercel env vars and are read only by the Python job functions. The Next.js app never imports the service-role key at all (an ESLint `no-restricted-imports` rule enforces this). Anon key + URL are the only values shipped to the browser.
+- **Job endpoints:** reject any request without the `X-Job-Secret` header (constant-time compare), and are excluded from the Next.js middleware/session layer entirely.
 - **Admin surface** at `/admin` gated by `is_site_admin` in middleware and again in each server action.
 - **Uploads:** MIME + magic-byte check, size cap, path scoped to `auth.uid()/`, no user-controlled filenames.
 - **Rate limits:** Supabase Auth's built-in limits on sign-in; Vercel WAF basic rules. Invite codes are 8 chars from a 32-symbol alphabet (~1e12 space) and can be rotated by the commissioner.
@@ -245,7 +253,7 @@ Verified against provider pricing pages on 2026-09-29. Free tiers change; re-che
 
 | Service | Tier | What we use | Monthly cost |
 |---|---|---|---|
-| Vercel | Hobby | ~5k function invocations/week on game weeks, < 1 GB bandwidth | **$0** (non-commercial use is within the Hobby terms) |
+| Vercel | Hobby | ~5k function invocations/week on game weeks (Next.js + Python), < 1 GB bandwidth | **$0** (non-commercial use is within the Hobby terms; Python runtime included) |
 | Supabase | Free | DB ~20 MB/season (limit 500 MB), storage < 20 MB (limit 1 GB), 20 MAU (limit 50k), pg_cron, Auth | **$0** |
 | The Odds API | Free | 18–36 credits/season of 500/month | **$0** |
 | ESPN public API | — | ~1k requests/week in season, cached | **$0** |
@@ -286,7 +294,8 @@ Goal: an empty but production-shaped app deployed with CI, migrations, auth and 
 - Supabase CLI: local stack via Docker, SQL migrations in `supabase/migrations/`, `supabase gen types` wired to `npm run db:types`.
 - Migration 0001: `profiles`, `app_settings`, `job_runs`, RLS enabled, signup trigger.
 - Auth pages: sign in / sign up / reset, Google button, remember-me checkbox, protected `/dashboard` shell.
-- CI (GitHub Actions): lint, typecheck, unit tests, `supabase db reset` + pgTAP, Playwright smoke on preview URL.
+- Python toolchain: `uv` for deps, `ruff` lint/format, `pytest`; `api/jobs/health.py` as the first deployed function proving the Vercel Python runtime and job secret work.
+- CI (GitHub Actions): ESLint + tsc + Vitest for the app, ruff + pytest for `api/`, `supabase db reset` + pgTAP, Playwright smoke on preview URL.
 - Deploy: Vercel project linked to `main`, preview deploys per PR, env vars documented in `.env.example`.
 - `docs/adr/0001-stack.md` … capturing the decisions from §1.
 - Weekly `pg_dump` backup workflow.
@@ -295,7 +304,7 @@ Goal: an empty but production-shaped app deployed with CI, migrations, auth and 
 
 ### Phase 1 — Season-ready MVP (5 Oct → 20 Oct)
 Goal: a league can run a full week without you touching the database. Ordered so the dry run on 13 Oct has items 1–6.
-1. **Reference data:** seasons, weeks, teams, games; `sync-schedule` job importing the 2026 schedule from ESPN; admin button to run it.
+1. **Reference data:** seasons, weeks, teams, games; Python `sync-schedule` job importing the 2026 schedule from ESPN; admin button to run it.
 2. **Leagues:** create league, invite code, join by code, member list, multiple commissioners (promote/demote), commissioner settings (name, starting balance, rotate code, remove member).
 3. **Spread lock job** + `open_week()` + admin settings for day/time/timezone/default balance/pick visibility, manual "re-pull now" and per-game re-pull.
 4. **Picks UI:** mobile-first weekly sheet: each game shows both teams, spread, kickoff in local time, tap-to-pick side, wager input with "available this week" always visible; edit/delete before kickoff; locked state after.
@@ -304,7 +313,7 @@ Goal: a league can run a full week without you touching the database. Ordered so
 7. **Profile:** display name, logo upload with client-side crop/resize.
 8. **Admin panel:** settings form, job runs table with re-run buttons, season editor (`playoffs_start_at`), league list.
 9. **Season end:** nightly job marks leagues complete and records the winner; dashboard shows a winner banner and news event.
-10. **Tests:** unit (payout, budget, elimination, spread matching), pgTAP (every RLS policy, `place_pick` rejections incl. eliminated member), Playwright (sign up → create league → join with second user → pick → simulate final → leaderboard and news feed update).
+10. **Tests:** Vitest (payout, budget, elimination display), pytest with recorded API fixtures (ESPN/Odds parsing, spread matching, no live network in CI), pgTAP (every RLS policy, `place_pick` rejections incl. eliminated member), Playwright (sign up → create league → join with second user → pick → simulate final → leaderboard and news feed update).
 
 **Done when:** two test users in two different leagues can play a simulated week end to end on the deployed site, and every table has RLS tests.
 
@@ -327,16 +336,20 @@ Goal: a league can run a full week without you touching the database. Ordered so
 
 ```
 pick-em/
-├─ app/                      # Next.js App Router
+├─ app/                      # Next.js App Router (TypeScript)
 │  ├─ (auth)/ sign-in, sign-up, reset
 │  ├─ (app)/ dashboard, leagues/[id]/picks, leagues/[id]/spreads, profile
 │  ├─ admin/
-│  └─ api/jobs/ lock-spreads, sync-scores, sync-schedule, close-season
+│  └─ api/revalidate/        # cache-tag invalidation, called by the Python jobs
+├─ api/                      # Python functions, deployed by Vercel alongside the app
+│  ├─ jobs/ lock_spreads.py, sync_scores.py, sync_schedule.py, close_season.py, health.py
+│  ├─ pickem/                # shared package: providers/ (espn.py, odds_api.py), db.py, models.py, cover_probability.py
+│  ├─ tests/                 # pytest + recorded JSON fixtures
+│  ├─ requirements.txt, pyproject.toml (ruff, pytest config)
 ├─ components/               # UI (shadcn) + feature components
 ├─ lib/
 │  ├─ supabase/ (server, client, middleware helpers)
-│  ├─ providers/ (espn.ts, odds-api.ts, ScoreProvider/OddsProvider interfaces)
-│  ├─ domain/ (payout.ts, budget.ts, cover-probability.ts — pure, unit-tested)
+│  ├─ domain/ (payout.ts, budget.ts — display-side pure helpers, unit-tested)
 │  └─ cache.ts (tags, revalidate helpers)
 ├─ supabase/
 │  ├─ migrations/            # SQL, one file per change
@@ -354,6 +367,8 @@ pick-em/
 | Risk | Impact | Mitigation |
 |---|---|---|
 | ESPN API changes or blocks | Live scores stop | Provider interface; The Odds API scores fallback; dashboard degrades to "scores delayed" |
+| Two runtimes in one repo (TS + Python) | Local dev friction, route conflicts | Python lives only under root `api/`; Next.js routes stay under `app/api/revalidate`; `vercel dev` runs both; CI runs both toolchains on every PR |
+| Python cold start on Vercel (~1 s) | Score sync runs late | Irrelevant at once-per-minute; job records its own timestamps so drift is visible in `job_runs` |
 | Free-tier project pause in off-season | Site down until restored | Documented one-click restore; optional Pro upgrade |
 | Spread matching errors (team name mismatch, doubleheaders) | Wrong line locked | Match on ESPN event id where possible, team abbreviation + kickoff window otherwise; admin per-game re-pull; job logs the unmatched list |
 | Double-submit / race on wager | Overspend | Row lock inside `place_pick`; unique pick per game |
