@@ -96,6 +96,8 @@ docs/               PLAN.md and ADRs
 
 ## Security model in one paragraph
 
+The full contract is in [SECURITY.md](SECURITY.md).
+
 The app talks to Postgres as the signed-in user, so row-level security is the authorization layer,
 not decoration. Table privileges are tightened per column, every policy has a pgTAP test for both
 the allowed and denied case, and money-moving operations run inside Postgres functions with row

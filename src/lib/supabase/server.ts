@@ -22,6 +22,7 @@ export async function createClient(options: Options = {}) {
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: { secure: process.env.NODE_ENV === "production" },
       cookies: {
         getAll() {
           return cookieStore.getAll();

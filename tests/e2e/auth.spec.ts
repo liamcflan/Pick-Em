@@ -5,11 +5,29 @@ import { expect, test } from "@playwright/test";
  * confirmation because the local config has `enable_confirmations = false`.
  */
 test("landing page renders and links to sign in", async ({ page }) => {
+  const cspViolations: string[] = [];
+  page.on("console", (msg) => {
+    if (msg.text().includes("Content Security Policy")) cspViolations.push(msg.text());
+  });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Pick-Em" })).toBeVisible();
   await page.getByRole("link", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  expect(cspViolations, "no CSP violations while rendering and navigating").toEqual([]);
+});
+
+test("responses carry security headers", async ({ request }) => {
+  const res = await request.get("/sign-in");
+  const headers = res.headers();
+  expect(headers["content-security-policy"]).toMatch(
+    /script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/,
+  );
+  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(headers["x-powered-by"]).toBeUndefined();
 });
 
 test("protected routes redirect to sign in with a next param", async ({ page }) => {

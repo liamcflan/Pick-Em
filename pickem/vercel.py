@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, urlsplit
 from pickem.log import get_logger, job_name_var, request_id_var
 from pickem.settings import Settings, load_settings
 
-JOB_SECRET_HEADER = "x-job-secret"
+JOB_SECRET_HEADER = "x-job-secret"  # noqa: S105 - header name, not a secret
 REQUEST_ID_HEADER = "x-request-id"
 
 

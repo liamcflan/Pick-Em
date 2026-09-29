@@ -11,13 +11,14 @@ const AUTH_ONLY_PATHS = ["/sign-in", "/sign-up", "/forgot-password"];
  * Refresh the Supabase session cookie on every request and apply optimistic redirects.
  * Reads the JWT only (no database calls) — real authorization happens in RLS and server code.
  */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+export async function updateSession(request: NextRequest, requestHeaders: Headers) {
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: { secure: process.env.NODE_ENV === "production" },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -25,7 +26,7 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet) {
           const persist = shouldPersist(request.cookies.get(REMEMBER_COOKIE)?.value);
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, applyPersistence(options, persist)),
           );
