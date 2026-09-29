@@ -1,0 +1,33 @@
+name: Weekly database backup
+
+# Supabase Free has no automated backups. This dumps schema + data weekly and keeps the last
+# 90 days as private workflow artifacts (only repo collaborators can download them).
+# Requires the SUPABASE_DB_URL secret (Project Settings → Database → connection string, session mode).
+
+on:
+  schedule:
+    - cron: "17 9 * * 2" # Tuesdays 09:17 UTC, before the spread lock
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    if: ${{ vars.BACKUPS_ENABLED == 'true' }}
+    steps:
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Dump roles, schema and data
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir -p backup
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/data.sql --data-only --use-copy
+          tar czf "backup-$(date -u +%Y%m%d).tgz" backup
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup-*.tgz
+          retention-days: 90
