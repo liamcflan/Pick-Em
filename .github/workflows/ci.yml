@@ -1,9 +1,12 @@
 name: CI
 
+# Runs once per change: on the release PR (dev → main) and on pushes to main.
+# A push to dev is covered by the open release PR; without one, run it manually (workflow_dispatch).
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

@@ -22,8 +22,9 @@ Multiple leagues run at once, joined by invite code.
 - `main` — production. Only changes through pull requests from `dev`, and only when CI is green
   (lint, types, unit tests, pgTAP against a real Supabase, Playwright e2e). Protect `main` in GitHub
   settings: require the three CI checks and block direct pushes.
-- CI runs on every push to `dev` and `main` and on every PR, so a red `dev` is visible before the
-  release PR is opened.
+- CI runs once per change: on the release PR and on pushes to `main`. Keep the `dev` → `main` PR
+  open while working and every push to `dev` is tested through it; if no PR is open, run the CI
+  workflow manually from the Actions tab.
 
 ## Local development
 
