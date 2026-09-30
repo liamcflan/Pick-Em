@@ -140,3 +140,39 @@ class SupabaseLineStore(SupabaseScheduleStore):
                 "p_payload": dict(payload),
             },
         ).execute()
+
+
+class SupabaseSettlementStore(SupabaseLineStore):
+    """Adds the queries the settlement and action-check jobs need."""
+
+    def started_unsettled_weeks(self, season_id: str, now: datetime) -> list[Mapping[str, Any]]:
+        res = (
+            self.client.table("weeks")
+            .select("id, week_number")
+            .eq("season_id", season_id)
+            .is_("settled_at", "null")
+            .lte("first_kickoff_at", now.isoformat())
+            .order("week_number")
+            .execute()
+        )
+        return list(res.data or [])
+
+    def settle_week(self, week_id: str) -> Mapping[str, Any]:
+        res = self.client.rpc("settle_week", {"p_week_id": week_id}).execute()
+        return res.data or {}
+
+    def weeks_due_for_action_check(self, season_id: str, now: datetime) -> list[Mapping[str, Any]]:
+        res = (
+            self.client.table("weeks")
+            .select("id, week_number")
+            .eq("season_id", season_id)
+            .is_("action_checked_at", "null")
+            .lte("last_deadline_at", now.isoformat())
+            .order("week_number")
+            .execute()
+        )
+        return list(res.data or [])
+
+    def weekly_action_check(self, week_id: str) -> Mapping[str, Any]:
+        res = self.client.rpc("weekly_action_check", {"p_week_id": week_id}).execute()
+        return res.data or {}

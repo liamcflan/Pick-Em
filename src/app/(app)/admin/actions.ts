@@ -61,3 +61,42 @@ export async function syncSchedule(
     unmatched && unmatched.length ? ` ${unmatched.length} game(s) had unknown teams.` : "";
   return { success: `Synced ${weeks ?? 0} week(s), ${games ?? 0} game(s).${extra}` };
 }
+
+function summarizeSettlement(body: Record<string, unknown>): string {
+  if (typeof body.skipped === "string") return `Nothing to do: ${body.skipped}.`;
+  const results = Array.isArray(body.results) ? (body.results as Record<string, unknown>[]) : [];
+  const parts = results.map((r) => {
+    const week = `Week ${String(r.week ?? "?")}`;
+    return r.ready
+      ? `${week}: settled (${String(r.picks_settled ?? 0)} pick(s) graded, ${String(r.eliminated ?? 0)} eliminated, ${String(r.completed ?? 0)} league(s) complete)`
+      : `${week}: games still in play (${String(r.picks_settled ?? 0)} pick(s) graded so far)`;
+  });
+  return parts.length ? parts.join(" ") : "Scores refreshed.";
+}
+
+const settlementJobSchema = z.object({ job: z.enum(["sync_finals", "weekly_action_check"]) });
+
+/**
+ * Run one of the settlement jobs now instead of waiting for the hourly cron:
+ * `sync_finals` refreshes scores and settles finished weeks; `weekly_action_check` applies
+ * automatic byes and forced picks for weeks past their last deadline.
+ */
+export async function runSettlementJob(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireSiteAdmin();
+  const parsed = settlementJobSchema.safeParse({ job: formData.get("job") });
+  if (!parsed.success) return { error: "Unknown job" };
+
+  const result = await runJob(parsed.data.job);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  if (!result.ok) return { error: result.error };
+  if (parsed.data.job === "sync_finals") return { success: summarizeSettlement(result.body) };
+
+  const b = result.body as { skipped?: string; byes?: number; forced?: number; errors?: number };
+  if (b.skipped) return { success: `Nothing to do: ${b.skipped}.` };
+  const errors = b.errors ? ` ${b.errors} member(s) could not be handled; see the job log.` : "";
+  return { success: `${b.byes ?? 0} automatic bye(s), ${b.forced ?? 0} forced pick(s).${errors}` };
+}

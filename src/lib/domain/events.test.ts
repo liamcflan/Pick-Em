@@ -84,4 +84,62 @@ describe("describeEvent", () => {
       ),
     ).toBe("A former member left the league");
   });
+
+  it("describes settlement events", () => {
+    expect(
+      describeEvent(
+        {
+          kind: "bye_used",
+          actor_user_id: null,
+          subject_user_id: "b",
+          payload: { week: 5, automatic: true },
+        },
+        name,
+        formatMoney,
+      ),
+    ).toBe("Bob made no picks, so their bye was used automatically");
+    expect(
+      describeEvent(
+        { kind: "bye_used", actor_user_id: "b", subject_user_id: "b", payload: { week: 5 } },
+        name,
+        formatMoney,
+      ),
+    ).toBe("Bob is on a bye this week");
+    expect(
+      describeEvent(
+        {
+          kind: "member_eliminated",
+          actor_user_id: null,
+          subject_user_id: "b",
+          payload: { week: 5 },
+        },
+        name,
+        formatMoney,
+      ),
+    ).toBe("Bob busted out in week 5");
+    expect(
+      describeEvent(
+        {
+          kind: "season_complete",
+          actor_user_id: null,
+          subject_user_id: "a",
+          payload: { week: 14, reason: "last_standing" },
+        },
+        name,
+        formatMoney,
+      ),
+    ).toBe("Alice is the last one standing and wins the league!");
+    expect(
+      describeEvent(
+        {
+          kind: "season_complete",
+          actor_user_id: null,
+          subject_user_id: "a",
+          payload: { week: 18, reason: "season_end" },
+        },
+        name,
+        formatMoney,
+      ),
+    ).toBe("Season over. Alice wins with the most money!");
+  });
 });

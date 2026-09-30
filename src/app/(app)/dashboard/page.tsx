@@ -4,12 +4,91 @@ import { redirect } from "next/navigation";
 
 import { rankRows } from "@/components/leagues/leaderboard";
 import { NewsFeed, type FeedItem } from "@/components/leagues/news-feed";
+import { ThisWeek, type ThisWeekLeague } from "@/components/picks/this-week";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/lib/domain/money";
+import { BET_UNIT_CENTS, formatMoney } from "@/lib/domain/money";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
+
+type MemberRow = {
+  league_id: string;
+  eliminated_at: string | null;
+  bye_week_id: string | null;
+};
+type LeagueRow = { id: string; name: string; status: "open" | "locked" | "complete" };
+
+/** Current week + my picks in it. Time-dependent, so it lives outside the component. */
+async function loadThisWeek(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  leagues: LeagueRow[],
+  myMemberships: MemberRow[],
+) {
+  const nowMs = Date.now();
+  const { data: season } = await supabase
+    .from("seasons")
+    .select("id")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!season) return null;
+  const { data: weeks } = await supabase
+    .from("weeks")
+    .select("id, week_number, last_deadline_at")
+    .eq("season_id", season.id)
+    .order("week_number");
+  const list = weeks ?? [];
+  const week =
+    list.find((w) => !w.last_deadline_at || new Date(w.last_deadline_at).getTime() > nowMs) ??
+    list.at(-1);
+  if (!week) return null;
+
+  const { data: picks } = await supabase
+    .from("picks")
+    .select(
+      "id, league_id, side, wager_cents, status, placed_by, games(status, home_score, away_score, home:teams!games_home_team_id_fkey(abbreviation), away:teams!games_away_team_id_fkey(abbreviation))",
+    )
+    .eq("user_id", userId)
+    .eq("week_id", week.id)
+    .order("created_at");
+
+  const byLeague: ThisWeekLeague[] = leagues.map((l) => {
+    const m = myMemberships.find((x) => x.league_id === l.id);
+    const mine = (picks ?? [])
+      .filter((p) => p.league_id === l.id)
+      .map((p) => {
+        const home = p.games?.home?.abbreviation ?? "HOME";
+        const away = p.games?.away?.abbreviation ?? "AWAY";
+        const g = p.games;
+        return {
+          id: p.id,
+          leagueId: l.id,
+          leagueName: l.name,
+          matchup: `${away} @ ${home}`,
+          team: p.side === "home" ? home : away,
+          units: Math.round(p.wager_cents / BET_UNIT_CENTS),
+          status: p.status,
+          placedBy: p.placed_by,
+          score:
+            g && g.status !== "scheduled" && g.home_score !== null && g.away_score !== null
+              ? `${g.status === "final" ? "Final" : "Live"} ${away} ${g.away_score}–${home} ${g.home_score}`
+              : null,
+        };
+      });
+    const status: ThisWeekLeague["status"] = m?.eliminated_at
+      ? "eliminated"
+      : l.status === "complete"
+        ? "complete"
+        : m?.bye_week_id === week.id
+          ? "bye"
+          : mine.length
+            ? "picked"
+            : "none";
+    return { id: l.id, name: l.name, status, picks: mine };
+  });
+  return { weekNumber: week.week_number, leagues: byLeague };
+}
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -20,7 +99,7 @@ export default async function DashboardPage() {
     await Promise.all([
       supabase
         .from("league_members")
-        .select("league_id, user_id, role, eliminated_at, profiles(display_name)")
+        .select("league_id, user_id, role, eliminated_at, bye_week_id, profiles(display_name)")
         .is("left_at", null),
       supabase
         .from("league_balances")
@@ -30,8 +109,15 @@ export default async function DashboardPage() {
         .select("id, league_id, kind, actor_user_id, subject_user_id, payload, created_at")
         .order("created_at", { ascending: false })
         .limit(12),
-      supabase.from("leagues").select("id, name"),
+      supabase.from("leagues").select("id, name, status"),
     ]);
+
+  const thisWeek = await loadThisWeek(
+    supabase,
+    user.id,
+    leagues ?? [],
+    (members ?? []).filter((m) => m.user_id === user.id),
+  );
 
   const leagueName = new Map((leagues ?? []).map((l) => [l.id, l.name]));
   const names: Record<string, string> = {};
@@ -103,11 +189,17 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>This week</CardTitle>
-            <CardDescription>Your picks and their live status.</CardDescription>
+            <CardTitle>{thisWeek ? `Week ${thisWeek.weekNumber}` : "This week"}</CardTitle>
+            <CardDescription>Your picks in every league and how they are doing.</CardDescription>
           </CardHeader>
-          <CardContent className="text-muted-foreground text-sm">
-            Picks open once lines are locked on Wednesday.
+          <CardContent>
+            {thisWeek ? (
+              <ThisWeek weekNumber={thisWeek.weekNumber} leagues={thisWeek.leagues} />
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                The season has not started yet. Picks open once lines are locked on Wednesday.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

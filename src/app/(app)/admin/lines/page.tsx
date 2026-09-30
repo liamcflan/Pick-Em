@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LineForm, PullLinesForm } from "@/components/admin/line-editor";
+import { LineForm, PullLinesForm, VoidGameForm } from "@/components/admin/line-editor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 
@@ -124,7 +124,8 @@ export default async function AdminLinesPage({ searchParams }: PageProps<"/admin
           <CardTitle>Games</CardTitle>
           <CardDescription>
             Negative home spread means the home team is favoured. Locked after each game&rsquo;s
-            deadline.
+            deadline. Void a game that will not be played: every pick on it is refunded and the week
+            can settle without it.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -136,6 +137,7 @@ export default async function AdminLinesPage({ searchParams }: PageProps<"/admin
                 <th className="py-2 pr-4">Deadline (ET)</th>
                 <th className="py-2 pr-4">Line</th>
                 <th className="py-2 pr-4">Home spread</th>
+                <th className="py-2 pr-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -167,6 +169,16 @@ export default async function AdminLinesPage({ searchParams }: PageProps<"/admin
                         current={line?.home_spread ?? null}
                         locked={locked}
                       />
+                    </td>
+                    <td className="py-2 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-xs">{g.status}</span>
+                        <VoidGameForm
+                          gameId={g.id}
+                          week={week.week_number}
+                          disabled={g.status === "void" || g.status === "final"}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

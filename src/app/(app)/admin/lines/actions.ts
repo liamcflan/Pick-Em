@@ -81,3 +81,32 @@ export async function pullLines(
     success: `Locked ${b.locked ?? 0} line(s), kept ${b.skipped_existing ?? 0} existing.${missing}`,
   };
 }
+
+/** RULES.md #12: an abandoned game is void and every wager on it is refunded. */
+export async function voidGame(
+  _prev: LinesActionState,
+  formData: FormData,
+): Promise<LinesActionState> {
+  await requireSiteAdmin();
+  const parsed = z
+    .object({
+      gameId: z.string().uuid(),
+      week: z.coerce.number().int().min(1).max(22),
+      reason: z.string().trim().max(120).optional(),
+    })
+    .safeParse({
+      gameId: formData.get("gameId"),
+      week: formData.get("week"),
+      reason: formData.get("reason") ?? undefined,
+    });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("void_game", {
+    p_game_id: parsed.data.gameId,
+    p_reason: parsed.data.reason || null,
+  });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/admin/lines");
+  return { success: `Game voided; ${data ?? 0} pick(s) refunded.` };
+}

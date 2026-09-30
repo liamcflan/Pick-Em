@@ -17,6 +17,13 @@ function str(payload: Json, key: string): string | undefined {
   return undefined;
 }
 
+function bool(payload: Json, key: string): boolean {
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    return (payload as Record<string, Json | undefined>)[key] === true;
+  }
+  return false;
+}
+
 function num(payload: Json, key: string): number | undefined {
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     const v = (payload as Record<string, Json | undefined>)[key];
@@ -47,9 +54,11 @@ export function describeEvent(
         ? `${actor} made ${subject} a commissioner`
         : `${actor} changed ${subject} back to a member`;
     case "member_eliminated":
-      return `${subject} busted out`;
+      return `${subject} busted out in week ${num(e.payload, "week") ?? ""}`.trim();
     case "bye_used":
-      return `${subject} is on a bye this week`;
+      return bool(e.payload, "automatic")
+        ? `${subject} made no picks, so their bye was used automatically`
+        : `${subject} is on a bye this week`;
     case "forced_pick":
       return `${subject} made no picks, so 1k went on the underdog automatically`;
     case "line_edited":
@@ -59,7 +68,9 @@ export function describeEvent(
     case "week_settled":
       return `Week ${num(e.payload, "week") ?? ""} is settled`.trim();
     case "season_complete":
-      return `Season over. ${subject} wins!`;
+      return str(e.payload, "reason") === "last_standing"
+        ? `${subject} is the last one standing and wins the league!`
+        : `Season over. ${subject} wins with the most money!`;
     case "commissioner_note":
       return `${actor}: ${str(e.payload, "text") ?? ""}`;
     case "league_updated": {

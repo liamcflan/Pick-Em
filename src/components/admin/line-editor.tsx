@@ -2,7 +2,12 @@
 
 import { useActionState } from "react";
 
-import { pullLines, setLine, type LinesActionState } from "@/app/(app)/admin/lines/actions";
+import {
+  pullLines,
+  setLine,
+  voidGame,
+  type LinesActionState,
+} from "@/app/(app)/admin/lines/actions";
 import { FormMessage } from "@/components/auth/form-message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +59,34 @@ export function PullLinesForm({ week }: { week: number }) {
       </label>
       <SubmitButton size="sm" pendingText="Pulling…">
         Pull lines from ESPN now
+      </SubmitButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+export function VoidGameForm({
+  gameId,
+  week,
+  disabled,
+}: {
+  gameId: string;
+  week: number;
+  disabled: boolean;
+}) {
+  const [state, action] = useActionState<LinesActionState, FormData>(voidGame, {});
+  return (
+    <form
+      action={action}
+      className="flex items-center gap-2"
+      onSubmit={(e) => {
+        if (!window.confirm("Void this game and refund every pick on it?")) e.preventDefault();
+      }}
+    >
+      <input type="hidden" name="gameId" value={gameId} />
+      <input type="hidden" name="week" value={week} />
+      <SubmitButton size="sm" variant="ghost" disabled={disabled} pendingText="Voiding…">
+        Void
       </SubmitButton>
       <FormMessage state={state} />
     </form>

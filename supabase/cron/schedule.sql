@@ -36,7 +36,13 @@ revoke all on function public.call_job(text, jsonb) from public;
 -- Lines: Wednesday 11:00–14:00 UTC hourly (covers 08:00 ET in both EDT and EST).
 select cron.schedule('pickem-lock-lines', '0 11-14 * * 3', $$ select public.call_job('lock_lines') $$);
 
--- Schedule/scores refresh: hourly (cheap; the live-score job in Phase 2 replaces this with minutes).
-select cron.schedule('pickem-sync-schedule', '15 * * * *', $$ select public.call_job('sync_schedule', jsonb_build_object('year', extract(year from now())::int)) $$);
+-- Schedule refresh: daily (kickoff moves are rare; scores come from sync_finals).
+select cron.schedule('pickem-sync-schedule', '15 9 * * *', $$ select public.call_job('sync_schedule', jsonb_build_object('year', extract(year from now())::int)) $$);
 
--- To remove: select cron.unschedule('pickem-lock-lines');
+-- Finals + settlement: hourly for weeks in play (Phase 2 adds a minute-level live job).
+select cron.schedule('pickem-sync-finals', '45 * * * *', $$ select public.call_job('sync_finals') $$);
+
+-- Bye / forced-pick check: hourly at :05, so it runs a few minutes after each 11:59 PM ET deadline.
+select cron.schedule('pickem-weekly-action-check', '5 * * * *', $$ select public.call_job('weekly_action_check') $$);
+
+-- To remove one: select cron.unschedule('pickem-lock-lines');

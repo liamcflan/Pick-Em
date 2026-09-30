@@ -112,7 +112,8 @@ begin
   if v_game.status <> 'scheduled' then
     raise exception 'game is not open for betting' using errcode = 'P0001';
   end if;
-  if now() >= v_game.deadline_at then
+  -- the forced pick (RULES.md #8) is placed by the job right after the deadline
+  if p_placed_by = 'member' and now() >= v_game.deadline_at then
     raise exception 'the deadline for this game has passed' using errcode = 'P0001';
   end if;
   if v_member.bye_week_id = v_game.week_id then

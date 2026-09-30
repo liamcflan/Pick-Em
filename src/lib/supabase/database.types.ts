@@ -187,6 +187,7 @@ export type Database = {
           last_game_id: string | null;
           last_deadline_at: string | null;
           settled_at: string | null;
+          action_checked_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -201,6 +202,7 @@ export type Database = {
           last_game_id?: string | null;
           last_deadline_at?: string | null;
           settled_at?: string | null;
+          action_checked_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -215,6 +217,7 @@ export type Database = {
           last_game_id?: string | null;
           last_deadline_at?: string | null;
           settled_at?: string | null;
+          action_checked_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -782,6 +785,11 @@ export type Database = {
       delete_pick: { Args: { p_pick_id: string }; Returns: undefined };
       take_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
       cancel_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
+      jwt_role: { Args: Record<string, never>; Returns: string };
+      settle_game: { Args: { p_game_id: string }; Returns: number };
+      void_game: { Args: { p_game_id: string; p_reason?: string | null }; Returns: number };
+      settle_week: { Args: { p_week_id: string }; Returns: Json };
+      weekly_action_check: { Args: { p_week_id: string }; Returns: Json };
     };
     Enums: {
       job_status: "running" | "succeeded" | "failed";

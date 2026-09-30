@@ -25,7 +25,7 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
 
   const { data: league } = await supabase
     .from("leagues")
-    .select("id, name, invite_code, status, starting_balance_cents, seasons(year)")
+    .select("id, name, invite_code, status, starting_balance_cents, winner_user_id, seasons(year)")
     .eq("id", id)
     .maybeSingle();
   if (!league) notFound(); // RLS hides leagues the user is not in
@@ -64,8 +64,20 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
     eliminatedAt: m.eliminated_at,
   }));
 
+  const complete = league.status === "complete";
+  const winnerName = league.winner_user_id ? (names[league.winner_user_id] ?? "A player") : null;
+
   return (
     <div className="space-y-6">
+      {complete ? (
+        <div
+          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-700 dark:bg-amber-950"
+          data-testid="winner-banner"
+        >
+          <span className="font-semibold">Season complete.</span>{" "}
+          {winnerName ? `${winnerName} wins the league.` : "No winner recorded."}
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{league.name}</h1>
@@ -76,8 +88,10 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm">
-            <Link href={`/leagues/${league.id}/picks`}>Make picks</Link>
+          <Button asChild size="sm" variant={complete ? "outline" : "default"}>
+            <Link href={`/leagues/${league.id}/picks`}>
+              {complete ? "View picks" : "Make picks"}
+            </Link>
           </Button>
           {me && !(isCommissioner && commissionerCount === 1) ? (
             <form action={removeMember}>
@@ -96,7 +110,7 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
           <CardHeader>
             <CardTitle>Leaderboard</CardTitle>
             <CardDescription>
-              Most money when the playoffs start wins. Hit $0 and you are out.
+              Last one standing wins. Otherwise, most money after week 18. Hit $0 and you are out.
             </CardDescription>
           </CardHeader>
           <CardContent>

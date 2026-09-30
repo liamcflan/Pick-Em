@@ -84,6 +84,19 @@ the service-role key is read by the Python jobs alone.
 6. **Backups.** Add the `SUPABASE_DB_URL` repository secret and set the `BACKUPS_ENABLED`
    repository variable to `true` to turn on the weekly `pg_dump` workflow.
 
+## Jobs
+
+Python functions under `api/jobs/`, called by pg_cron through `public.call_job()` (see
+`supabase/cron/schedule.sql`) or by the admin panel. All are idempotent and log a `job_runs` row.
+
+| Job                   | When                    | What                                                                      |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| `sync_schedule`       | daily                   | Import / refresh the season schedule from ESPN                            |
+| `lock_lines`          | Wednesday mornings      | Store the consensus spread for each game of the week (admins may edit)    |
+| `sync_finals`         | hourly                  | Refresh scores for weeks in play and call `settle_week` (payouts, busts)  |
+| `weekly_action_check` | hourly                  | After a week's last deadline: automatic byes and forced 1k underdog picks |
+| `health`              | on demand               | Proves the runtime and job secret work                                    |
+
 ## Repository layout
 
 ```

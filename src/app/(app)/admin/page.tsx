@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SettlementButtons } from "@/components/admin/job-buttons";
 import { SyncScheduleForm } from "@/components/admin/sync-schedule-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +29,7 @@ export default async function AdminPage() {
     supabase
       .from("weeks")
       .select(
-        "id, season_id, week_number, opens_at, spread_lock_at, first_kickoff_at, last_deadline_at, games(count)",
+        "id, season_id, week_number, opens_at, spread_lock_at, first_kickoff_at, last_deadline_at, action_checked_at, settled_at, games(count)",
       )
       .order("week_number"),
     supabase
@@ -62,6 +63,19 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <SyncScheduleForm defaultYear={active?.year ?? new Date().getFullYear()} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Settlement</CardTitle>
+            <CardDescription>
+              Both run automatically every hour once pg_cron is scheduled. Use these to run them
+              now.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettlementButtons />
           </CardContent>
         </Card>
 
@@ -120,6 +134,8 @@ export default async function AdminPage() {
                     <th className="py-2 pr-4">Lines lock</th>
                     <th className="py-2 pr-4">First kickoff</th>
                     <th className="py-2 pr-4">Last deadline</th>
+                    <th className="py-2 pr-4">Checked</th>
+                    <th className="py-2 pr-4">Settled</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -130,6 +146,8 @@ export default async function AdminPage() {
                       <td className="py-2 pr-4">{when(w.spread_lock_at)}</td>
                       <td className="py-2 pr-4">{when(w.first_kickoff_at)}</td>
                       <td className="py-2 pr-4">{when(w.last_deadline_at)}</td>
+                      <td className="py-2 pr-4">{when(w.action_checked_at)}</td>
+                      <td className="py-2 pr-4">{when(w.settled_at)}</td>
                     </tr>
                   ))}
                 </tbody>

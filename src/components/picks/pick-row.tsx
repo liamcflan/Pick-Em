@@ -35,6 +35,30 @@ export type PickRowPick = {
   placedBy: "member" | "system";
 } | null;
 
+const RESULT_LABEL: Record<string, { label: string; className: string }> = {
+  open: { label: "locked in", className: "text-muted-foreground" },
+  won: { label: "won", className: "text-emerald-700 dark:text-emerald-400" },
+  lost: { label: "lost", className: "text-destructive" },
+  push: { label: "push (loss)", className: "text-destructive" },
+  void: { label: "void, refunded", className: "text-muted-foreground" },
+};
+
+export function ResultBadge({
+  status,
+  placedBy,
+}: {
+  status: string;
+  placedBy: "member" | "system";
+}) {
+  const r = RESULT_LABEL[status] ?? { label: status, className: "text-muted-foreground" };
+  return (
+    <span className={cn("ml-2 text-xs font-medium", r.className)} data-testid="pick-result">
+      {placedBy === "system" ? "auto-placed · " : ""}
+      {r.label}
+    </span>
+  );
+}
+
 export function PickRow({
   leagueId,
   game,
@@ -155,9 +179,7 @@ export function PickRow({
           <p className="text-sm">
             {pick.units}k on{" "}
             {pick.side === "home" ? game.home.abbreviation : game.away.abbreviation}
-            <span className="text-muted-foreground ml-2 text-xs">
-              {pick.status === "open" ? "locked in" : pick.status}
-            </span>
+            <ResultBadge status={pick.status} placedBy={pick.placedBy} />
           </p>
         ) : (
           <p className="text-muted-foreground text-sm">
