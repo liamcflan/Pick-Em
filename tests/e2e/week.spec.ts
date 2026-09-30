@@ -10,7 +10,7 @@ import type { Database } from "@/lib/supabase/database.types";
  * service role stands in for the ESPN sync + settlement job.
  */
 const SEASON_ID = "10000000-0000-0000-0000-000000002026";
-const WEEK_ID = "20000000-0000-0000-0000-000000000005";
+const WEEK_ID = "20000000-0000-0000-0000-000000202605";
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 test.skip(!serviceKey, "SUPABASE_SERVICE_ROLE_KEY is not set (CI only)");

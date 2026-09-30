@@ -4,8 +4,11 @@ NFL spread pick'em for friend groups. Everyone starts the season with a bankroll
 locked weekly spreads, and whoever has the most when the playoffs start wins the league.
 Multiple leagues run at once, joined by invite code.
 
-**Status:** Phase 0 (foundation). See [docs/PLAN.md](docs/PLAN.md) for the full plan and
-[docs/adr/](docs/adr/) for architecture decisions.
+**Status:** Phase 1 (season-ready MVP) on `dev`. Documentation lives in [docs/](docs/README.md):
+[architecture](docs/ARCHITECTURE.md), [database and data model](docs/DATABASE.md),
+[jobs](docs/JOBS.md), [web app](docs/WEB.md), [testing](docs/TESTING.md),
+[operations](docs/OPERATIONS.md), the [official rules](docs/RULES.md), the
+[plan](docs/PLAN.md) and [ADRs](docs/adr/).
 
 ## Stack
 

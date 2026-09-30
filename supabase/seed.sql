@@ -9,12 +9,12 @@ values ('10000000-0000-0000-0000-000000002026', 2026, true)
 on conflict (year) do nothing;
 
 insert into public.weeks (id, season_id, week_number, opens_at, spread_lock_at)
-values ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000002026', 5,
+values ('20000000-0000-0000-0000-000000202605', '10000000-0000-0000-0000-000000002026', 5,
         now() - interval '1 day', now() - interval '1 hour')
 on conflict (season_id, week_number) do nothing;
 
 insert into public.games (id, season_id, week_id, espn_event_id, home_team_id, away_team_id, kickoff_at)
-select v.id, '10000000-0000-0000-0000-000000002026', '20000000-0000-0000-0000-000000000005', v.espn,
+select v.id, '10000000-0000-0000-0000-000000002026', '20000000-0000-0000-0000-000000202605', v.espn,
        h.id, a.id, now() + v.kickoff
 from (values
   ('30000000-0000-0000-0000-000000000501'::uuid, 'seed-501', 'NYG', 'DAL', interval '3 days'),

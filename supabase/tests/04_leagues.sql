@@ -2,7 +2,9 @@ begin;
 select plan(39);
 
 -- fixtures: season + three users
-insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2026, true);
+-- a seeded local stack already has an active season (seed.sql); the fixtures below take over
+update public.seasons set is_active = false;
+insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2030, true);
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'alice@example.com', '{"display_name": "Alice"}'),
   ('00000000-0000-0000-0000-00000000000b', 'bob@example.com',   '{"display_name": "Bob"}'),

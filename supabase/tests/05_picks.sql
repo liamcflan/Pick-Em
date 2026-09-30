@@ -2,7 +2,9 @@ begin;
 select plan(42);
 
 -- ---- fixtures: season, week 5 (open) and week 14 (no byes), games, lines, league with alice+bob
-insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2026, true);
+-- a seeded local stack already has an active season (seed.sql); the fixtures below take over
+update public.seasons set is_active = false;
+insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2030, true);
 insert into public.weeks (id, season_id, week_number) values
   ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 5),
   ('20000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000001', 14);

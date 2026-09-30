@@ -18,7 +18,9 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000002', 'user@example.com', '{"display_name": "User"}');
 update public.profiles set is_site_admin = true where id = '00000000-0000-0000-0000-000000000001';
 
-insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2026, true);
+-- a seeded local stack already has an active season (seed.sql); the fixtures below take over
+update public.seasons set is_active = false;
+insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2030, true);
 insert into public.weeks (id, season_id, week_number) values
   ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 5),
   ('20000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000001', 9);
@@ -54,13 +56,13 @@ select is((select deadline_at from public.games where espn_event_id = 'e2'), '20
   'deadline recomputed when kickoff changes');
 
 -- ---- week rollups
-select is((select first_kickoff_at from public.weeks where week_number = 5), '2026-10-02 00:15+00'::timestamptz, 'week first kickoff');
-select is((select last_kickoff_at from public.weeks where week_number = 5), '2026-10-05 00:20+00'::timestamptz, 'week last kickoff');
-select is((select last_game_id from public.weeks where week_number = 5), '30000000-0000-0000-0000-000000000002'::uuid, 'week last game');
-select is((select last_deadline_at from public.weeks where week_number = 5), '2026-10-04 03:59+00'::timestamptz, 'week last deadline');
+select is((select first_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-02 00:15+00'::timestamptz, 'week first kickoff');
+select is((select last_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-05 00:20+00'::timestamptz, 'week last kickoff');
+select is((select last_game_id from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '30000000-0000-0000-0000-000000000002'::uuid, 'week last game');
+select is((select last_deadline_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-04 03:59+00'::timestamptz, 'week last deadline');
 
 update public.games set status = 'void' where espn_event_id = 'e2';
-select is((select last_game_id from public.weeks where week_number = 5), '30000000-0000-0000-0000-000000000001'::uuid, 'void games excluded from rollup');
+select is((select last_game_id from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '30000000-0000-0000-0000-000000000001'::uuid, 'void games excluded from rollup');
 update public.games set status = 'scheduled' where espn_event_id = 'e2';
 
 -- ---- RLS: signed-in users read, cannot write
@@ -68,7 +70,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated"}', true);
 select is((select count(*)::int from public.teams), 32, 'user can read teams');
-select is((select count(*)::int from public.games), 4, 'user can read games');
+select is((select count(*)::int from public.games where season_id = '10000000-0000-0000-0000-000000000001'), 4, 'user can read games');
 select throws_ok($$ update public.games set home_score = 99 where espn_event_id = 'e1' $$, '42501', null, 'user cannot update games');
 select throws_ok($$ insert into public.lines (game_id, home_spread, source) values ('30000000-0000-0000-0000-000000000001', -3, 'admin') $$,
   '42501', null, 'user cannot insert lines directly');

@@ -20,5 +20,8 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   echo "applying $(basename "$f")"
   psql "$TEST_URL" -q -v ON_ERROR_STOP=1 -f "$f"
 done
+# `supabase start` seeds too, so the tests must pass against a seeded database.
+echo "applying seed.sql"
+psql "$TEST_URL" -q -v ON_ERROR_STOP=1 -f "$ROOT/supabase/seed.sql"
 
 pg_prove --ext .sql -d "$TEST_URL" "$ROOT"/supabase/tests/*.sql

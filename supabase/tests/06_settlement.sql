@@ -2,7 +2,9 @@ begin;
 select plan(59);
 
 -- ---- fixtures: season, weeks 3/5/14/18, four users, one league
-insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2026, true);
+-- a seeded local stack already has an active season (seed.sql); the fixtures below take over
+update public.seasons set is_active = false;
+insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2030, true);
 insert into public.weeks (id, season_id, week_number) values
   ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 3),
   ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 5),
