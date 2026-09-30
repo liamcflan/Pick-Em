@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { runJob } from "@/lib/jobs";
+import { friendlyDbError } from "@/lib/supabase/errors";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export type AdminActionState = { error?: string; success?: string };
@@ -99,4 +100,39 @@ export async function runSettlementJob(
   if (b.skipped) return { success: `Nothing to do: ${b.skipped}.` };
   const errors = b.errors ? ` ${b.errors} member(s) could not be handled; see the job log.` : "";
   return { success: `${b.byes ?? 0} automatic bye(s), ${b.forced ?? 0} forced pick(s).${errors}` };
+}
+
+const seasonSchema = z.object({
+  seasonId: z.string().uuid(),
+  regularSeasonWeeks: z.coerce.number().int().min(1).max(22),
+  playoffsStartAt: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? new Date(v) : null))
+    .refine((d) => d === null || !Number.isNaN(d.getTime()), "Invalid date"),
+});
+
+/** Season shape: which week settles the winners, and when the playoffs start. */
+export async function updateSeason(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireSiteAdmin();
+  const parsed = seasonSchema.safeParse({
+    seasonId: formData.get("seasonId"),
+    regularSeasonWeeks: formData.get("regularSeasonWeeks"),
+    playoffsStartAt: formData.get("playoffsStartAt") ?? undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_season", {
+    p_season_id: parsed.data.seasonId,
+    p_regular_season_weeks: parsed.data.regularSeasonWeeks,
+    p_playoffs_start_at: parsed.data.playoffsStartAt?.toISOString() ?? null,
+  });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/admin");
+  return { success: "Season saved." };
 }

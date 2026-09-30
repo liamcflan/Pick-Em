@@ -787,6 +787,14 @@ export type Database = {
       cancel_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
       jwt_role: { Args: Record<string, never>; Returns: string };
       refresh_game_deadlines: { Args: Record<string, never>; Returns: number };
+      update_season: {
+        Args: {
+          p_season_id: string;
+          p_regular_season_weeks: number | null;
+          p_playoffs_start_at: string | null;
+        };
+        Returns: undefined;
+      };
       settle_game: { Args: { p_game_id: string }; Returns: number };
       void_game: { Args: { p_game_id: string; p_reason?: string | null }; Returns: number };
       settle_week: { Args: { p_week_id: string }; Returns: Json };

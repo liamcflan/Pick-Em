@@ -7,6 +7,8 @@ export type LeaderboardRow = {
   role: "member" | "commissioner";
   eliminatedAt: string | null;
   avatarPath?: string | null;
+  /** Net ledger movement in the current week (wagers, refunds, payouts). */
+  weekDeltaCents?: number;
 };
 
 /** Rank by balance desc, then fewer dollars risked. Eliminated members sort last. */

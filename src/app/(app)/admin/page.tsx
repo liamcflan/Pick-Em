@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { SettlementButtons } from "@/components/admin/job-buttons";
+import { SeasonForm } from "@/components/admin/season-form";
 import { SyncScheduleForm } from "@/components/admin/sync-schedule-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +18,22 @@ const fmt = new Intl.DateTimeFormat("en-US", {
   timeZoneName: "short",
 });
 
+/** `YYYY-MM-DDTHH:MM` in Eastern for a datetime-local input. */
+function toEasternLocal(value: string | null): string {
+  if (!value) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(value));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
 function when(value: string | null): string {
   return value ? fmt.format(new Date(value)) : "—";
 }
@@ -24,7 +41,10 @@ function when(value: string | null): string {
 export default async function AdminPage() {
   const supabase = await createClient();
   const [{ data: seasons }, { data: weeks }, { data: runs }] = await Promise.all([
-    supabase.from("seasons").select("id, year, is_active").order("year", { ascending: false }),
+    supabase
+      .from("seasons")
+      .select("id, year, is_active, regular_season_weeks, playoffs_start_at")
+      .order("year", { ascending: false }),
     supabase
       .from("weeks")
       .select(
@@ -115,7 +135,14 @@ export default async function AdminPage() {
             Deadlines are 11:59 PM Eastern the night before each game. Lines lock Wednesday morning.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {active ? (
+            <SeasonForm
+              seasonId={active.id}
+              regularSeasonWeeks={active.regular_season_weeks}
+              playoffsStartAtLocal={toEasternLocal(active.playoffs_start_at)}
+            />
+          ) : null}
           {activeWeeks.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

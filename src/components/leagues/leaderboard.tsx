@@ -4,7 +4,23 @@ import { formatMoney } from "@/lib/domain/money";
 
 export type { LeaderboardRow };
 
-export function Leaderboard({ rows, meId }: { rows: LeaderboardRow[]; meId: string }) {
+function delta(cents: number | undefined): { text: string; className: string } {
+  if (cents === undefined || cents === 0) return { text: "—", className: "text-muted-foreground" };
+  return cents > 0
+    ? { text: `+${formatMoney(cents)}`, className: "text-emerald-700 dark:text-emerald-400" }
+    : { text: `−${formatMoney(-cents)}`, className: "text-destructive" };
+}
+
+export function Leaderboard({
+  rows,
+  meId,
+  weekLabel,
+}: {
+  rows: LeaderboardRow[];
+  meId: string;
+  /** When set, a column shows each member's net movement this week. */
+  weekLabel?: string;
+}) {
   const ranked = rankRows(rows);
   return (
     <table className="w-full text-sm" data-testid="leaderboard">
@@ -12,6 +28,7 @@ export function Leaderboard({ rows, meId }: { rows: LeaderboardRow[]; meId: stri
         <tr>
           <th className="py-2 pr-3">#</th>
           <th className="py-2 pr-3">Player</th>
+          {weekLabel ? <th className="py-2 pr-3 text-right">{weekLabel}</th> : null}
           <th className="py-2 text-right">Balance</th>
         </tr>
       </thead>
@@ -34,6 +51,13 @@ export function Leaderboard({ rows, meId }: { rows: LeaderboardRow[]; meId: stri
                 <span className="text-destructive ml-2 text-xs">busted</span>
               ) : null}
             </td>
+            {weekLabel ? (
+              <td
+                className={`py-2 pr-3 text-right tabular-nums ${delta(r.weekDeltaCents).className}`}
+              >
+                {delta(r.weekDeltaCents).text}
+              </td>
+            ) : null}
             <td className="py-2 text-right tabular-nums">{formatMoney(r.balanceCents)}</td>
           </tr>
         ))}

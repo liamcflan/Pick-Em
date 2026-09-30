@@ -17,6 +17,18 @@ import { createClient, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "League" };
 
+type WeekLike = { id: string; week_number: number; last_deadline_at: string | null };
+
+/** The first week whose last deadline has not passed (or the last week). Outside the component
+ * because it reads the clock. */
+function pickCurrentWeek(list: WeekLike[]): WeekLike | undefined {
+  const nowMs = Date.now();
+  return (
+    list.find((w) => !w.last_deadline_at || new Date(w.last_deadline_at).getTime() > nowMs) ??
+    list.at(-1)
+  );
+}
+
 export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">) {
   const { id } = await params;
   const user = await getUser();
@@ -25,7 +37,9 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
 
   const { data: league } = await supabase
     .from("leagues")
-    .select("id, name, invite_code, status, starting_balance_cents, winner_user_id, seasons(year)")
+    .select(
+      "id, name, invite_code, status, starting_balance_cents, winner_user_id, season_id, seasons(year)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!league) notFound(); // RLS hides leagues the user is not in
@@ -47,6 +61,24 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
       .limit(25),
   ]);
 
+  // Net movement in the current week (open wagers count as negative until they settle).
+  const { data: weeks } = await supabase
+    .from("weeks")
+    .select("id, week_number, last_deadline_at")
+    .eq("season_id", league.season_id)
+    .order("week_number");
+  const currentWeek = pickCurrentWeek(weeks ?? []);
+  const { data: weekRows } = currentWeek
+    ? await supabase
+        .from("ledger")
+        .select("user_id, amount_cents")
+        .eq("league_id", id)
+        .eq("week_id", currentWeek.id)
+    : { data: [] as { user_id: string; amount_cents: number }[] };
+  const weekDelta = new Map<string, number>();
+  for (const r of weekRows ?? [])
+    weekDelta.set(r.user_id, (weekDelta.get(r.user_id) ?? 0) + r.amount_cents);
+
   const names: Record<string, string> = {};
   for (const m of members ?? []) names[m.user_id] = m.profiles?.display_name ?? "Player";
   const active = (members ?? []).filter((m) => !m.left_at);
@@ -63,6 +95,7 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
     role: m.role,
     eliminatedAt: m.eliminated_at,
     avatarPath: m.profiles?.avatar_path ?? null,
+    weekDeltaCents: weekDelta.get(m.user_id) ?? 0,
   }));
 
   const complete = league.status === "complete";
@@ -115,7 +148,11 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Leaderboard rows={rows} meId={user.id} />
+            <Leaderboard
+              rows={rows}
+              meId={user.id}
+              weekLabel={currentWeek ? `Week ${currentWeek.week_number}` : undefined}
+            />
           </CardContent>
         </Card>
 

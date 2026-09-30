@@ -16,11 +16,12 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 | `/auth/callback`            | anyone       | OAuth / magic-link code exchange, then a same-origin redirect (`safeNext`)            |
 | `/dashboard`                | member       | My leagues with rank and balance, this week's picks per league with results, news across leagues |
 | `/leagues`                  | member       | Create a league / join by invite code                                                 |
-| `/leagues/[id]`             | member       | Leaderboard (avatars, busted badge), news feed, invite code and settings for commissioners, winner banner |
+| `/leagues/[id]`             | member       | Leaderboard (avatars, this-week movement, busted badge), news feed, invite code and settings for commissioners, winner banner |
 | `/leagues/[id]/picks?week=` | member       | The weekly picks sheet: budget, bye card, one row per game with side buttons and a wager stepper, result badges once settled |
 | `/profile`                  | member       | Display name; logo upload (browser crop to 256 px WebP)                              |
-| `/admin`                    | site admin   | Schedule import, settlement buttons, recent job runs, season/week table               |
+| `/admin`                    | site admin   | Schedule import, settlement buttons, recent job runs, season editor and week table     |
 | `/admin/lines?week=`        | site admin   | Pull consensus lines now, edit any line, void a game                                  |
+| `/admin/leagues`            | site admin   | Every league with status, player counts, creator and invite code (read-only)         |
 | `/admin/settings`           | site admin   | Lock day/time, timezone, default balance, bet unit, pick hiding                       |
 | `/admin/audit`              | site admin   | Audit log viewer with filters                                                         |
 | `/api/revalidate`           | jobs         | Cache-tag invalidation, `x-job-secret` protected                                      |

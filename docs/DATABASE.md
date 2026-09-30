@@ -264,6 +264,7 @@ checks membership itself), **commissioner**, **operator** = service role or site
 | `settle_week(week)`               | operator | Settles finished games first. If any game is still not final/void returns `{ready:false}`. Otherwise stamps `settled_at`, eliminates members at ≤ 0 with no open picks, posts `week_settled` once per league, and completes a league when one player is left standing or when the week is the last regular-season week (highest balance; ties to whoever risked less). Returns a jsonb summary. |
 | `weekly_action_check(week)`       | operator | After `last_deadline_at`: every active member with no pick that week gets their bye (weeks 1–13, if unused) or a system pick of one unit on the underdog of the week's last game (positive home spread → home is the dog; pick 'em → away). Per-member errors are returned, not raised. Stamps `action_checked_at`. |
 | `refresh_game_deadlines()`        | operator | Re-runs the deadline trigger for scheduled games after the site timezone changes.                                                                                                                                                                     |
+| `update_season(season, weeks, playoffs_start_at)` | operator | Sets how many regular-season weeks count (the last one settles winners) and the playoffs date. Audited.                                                                                                                       |
 | `jwt_role()`, `require_operator()` | internal | Role from the JWT; raises `42501` unless service role or site admin.                                                                                                                                                                                 |
 
 Error codes the app maps to friendly messages (`src/lib/supabase/errors.ts`): `42501` not
@@ -284,15 +285,15 @@ allowed, `P0002` not found, `P0001` rule violation (message is user-safe), `2351
 
 ## Row-level security
 
-Policies as of migration 0006. "members" means members of that league (via `is_league_member`).
+Policies as of migration 0007. "members" means members of that league (via `is_league_member`).
 
 | Table            | SELECT                                                                                   | INSERT / UPDATE / DELETE                                            |
 | ---------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `profiles`       | any signed-in user                                                                       | UPDATE own row, columns `display_name`, `avatar_path` only          |
 | `app_settings`   | any signed-in user                                                                       | UPDATE site admins, rule columns only                               |
 | `seasons`, `weeks`, `teams`, `games`, `lines` | any signed-in user                                          | functions / service role only                                       |
-| `leagues`, `league_members`, `ledger`, `league_events` | members                                            | functions only                                                      |
-| `picks`          | own rows; league-mates' rows unless `hide_picks_until_kickoff` and the deadline has not passed | functions only                                                 |
+| `leagues`, `league_members`, `ledger`, `league_events` | members, or any site admin                          | functions only                                                      |
+| `picks`          | own rows; league-mates' rows unless `hide_picks_until_kickoff` and the deadline has not passed; site admins | functions only                                    |
 | `job_runs`       | site admins                                                                              | service role only                                                   |
 | `audit_log`      | own actions, own profile history, or site admin                                          | trigger only; never updated or deleted                              |
 | `storage.objects` (bucket `logos`) | anyone                                                                 | INSERT/UPDATE/DELETE only under `<own uid>/`                        |
@@ -319,6 +320,7 @@ reset` and the hosted project's migration runner (`supabase db push`).
 | `20260930180000_picks`           | picks, budget math, `place_pick` family, byes                                              |
 | `20260930210000_settlement`      | `settle_game`, `void_game`, `settle_week`, `weekly_action_check`, operator helpers          |
 | `20260930230000_profiles_storage`| `logos` bucket + policies, avatar ownership trigger, `refresh_game_deadlines`, tz check     |
+| `20260930235000_admin_oversight`  | Site-admin read policies on league data, `update_season`, audit trigger on seasons         |
 
 Conventions: one migration per feature; never edit a migration that has reached production (add a
 new one); every function `security definer` sets `search_path = ''` and schema-qualifies

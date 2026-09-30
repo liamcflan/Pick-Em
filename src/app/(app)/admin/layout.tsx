@@ -25,6 +25,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin/lines" className="text-muted-foreground hover:text-foreground">
           Lines
         </Link>
+        <Link href="/admin/leagues" className="text-muted-foreground hover:text-foreground">
+          Leagues
+        </Link>
         <Link href="/admin/settings" className="text-muted-foreground hover:text-foreground">
           Settings
         </Link>
