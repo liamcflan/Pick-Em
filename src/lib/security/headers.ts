@@ -32,7 +32,14 @@ export function buildCsp({ nonce, supabaseUrl, isDev, isVercelPreview = false }:
     "default-src": ["'self'"],
     "script-src": scriptSrc,
     "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "blob:", "data:", supabaseOrigin, "https://lh3.googleusercontent.com"],
+    "img-src": [
+      "'self'",
+      "blob:",
+      "data:",
+      supabaseOrigin,
+      "https://lh3.googleusercontent.com",
+      "https://a.espncdn.com", // team logos
+    ],
     "font-src": ["'self'"],
     "connect-src": connectSrc,
     // Server-action redirects after a form POST are subject to form-action in Chrome, so the

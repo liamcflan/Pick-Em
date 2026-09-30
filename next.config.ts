@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     // Logos are served from Supabase Storage; the host is set per environment.
-    remotePatterns: supabaseHost ? [{ protocol: "https", hostname: supabaseHost }] : [],
+    remotePatterns: [
+      { protocol: "https", hostname: "a.espncdn.com" }, // team logos
+      ...(supabaseHost ? [{ protocol: "https" as const, hostname: supabaseHost }] : []),
+    ],
   },
 };
 

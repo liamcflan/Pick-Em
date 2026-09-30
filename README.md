@@ -38,7 +38,8 @@ cp .env.example .env.local        # then fill in values (see below)
 
 supabase start                    # local Postgres + Auth + Storage; applies supabase/migrations
 supabase status -o env            # copy API_URL and ANON_KEY into .env.local
-pnpm dev                          # http://localhost:3000
+pnpm dev                          # http://localhost:3000 (Next.js only)
+vercel dev                        # Next.js + the Python job functions under /api/jobs/*
 ```
 
 Useful commands:

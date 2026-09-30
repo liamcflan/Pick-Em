@@ -47,6 +47,7 @@ export type Database = {
           hide_picks_until_kickoff: boolean;
           odds_provider: string;
           score_poll_interval_s: number;
+          bet_unit_cents: number;
           updated_at: string;
         };
         Insert: {
@@ -58,6 +59,7 @@ export type Database = {
           hide_picks_until_kickoff?: boolean;
           odds_provider?: string;
           score_poll_interval_s?: number;
+          bet_unit_cents?: number;
           updated_at?: string;
         };
         Update: {
@@ -69,6 +71,7 @@ export type Database = {
           hide_picks_until_kickoff?: boolean;
           odds_provider?: string;
           score_poll_interval_s?: number;
+          bet_unit_cents?: number;
           updated_at?: string;
         };
         Relationships: [];
@@ -142,6 +145,267 @@ export type Database = {
         };
         Relationships: [];
       };
+      seasons: {
+        Row: {
+          id: string;
+          year: number;
+          regular_season_weeks: number;
+          playoffs_start_at: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          year: number;
+          regular_season_weeks?: number;
+          playoffs_start_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          year?: number;
+          regular_season_weeks?: number;
+          playoffs_start_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      weeks: {
+        Row: {
+          id: string;
+          season_id: string;
+          week_number: number;
+          opens_at: string | null;
+          spread_lock_at: string | null;
+          first_kickoff_at: string | null;
+          last_kickoff_at: string | null;
+          last_game_id: string | null;
+          last_deadline_at: string | null;
+          settled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          season_id: string;
+          week_number: number;
+          opens_at?: string | null;
+          spread_lock_at?: string | null;
+          first_kickoff_at?: string | null;
+          last_kickoff_at?: string | null;
+          last_game_id?: string | null;
+          last_deadline_at?: string | null;
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          season_id?: string;
+          week_number?: number;
+          opens_at?: string | null;
+          spread_lock_at?: string | null;
+          first_kickoff_at?: string | null;
+          last_kickoff_at?: string | null;
+          last_game_id?: string | null;
+          last_deadline_at?: string | null;
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "weeks_season_id_fkey";
+            columns: ["season_id"];
+            isOneToOne: false;
+            referencedRelation: "seasons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      teams: {
+        Row: {
+          id: string;
+          espn_team_id: number;
+          abbreviation: string;
+          location: string;
+          name: string;
+          display_name: string;
+          conference: string;
+          division: string;
+          logo_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          espn_team_id: number;
+          abbreviation: string;
+          location: string;
+          name: string;
+          display_name: string;
+          conference: string;
+          division: string;
+          logo_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          espn_team_id?: number;
+          abbreviation?: string;
+          location?: string;
+          name?: string;
+          display_name?: string;
+          conference?: string;
+          division?: string;
+          logo_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      games: {
+        Row: {
+          id: string;
+          season_id: string;
+          week_id: string;
+          espn_event_id: string;
+          home_team_id: string;
+          away_team_id: string;
+          kickoff_at: string;
+          deadline_at: string;
+          neutral_site: boolean;
+          status: Database["public"]["Enums"]["game_status"];
+          status_detail: string | null;
+          home_score: number | null;
+          away_score: number | null;
+          period: number | null;
+          clock: string | null;
+          last_synced_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          season_id: string;
+          week_id: string;
+          espn_event_id: string;
+          home_team_id: string;
+          away_team_id: string;
+          kickoff_at: string;
+          deadline_at?: string;
+          neutral_site?: boolean;
+          status?: Database["public"]["Enums"]["game_status"];
+          status_detail?: string | null;
+          home_score?: number | null;
+          away_score?: number | null;
+          period?: number | null;
+          clock?: string | null;
+          last_synced_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          season_id?: string;
+          week_id?: string;
+          espn_event_id?: string;
+          home_team_id?: string;
+          away_team_id?: string;
+          kickoff_at?: string;
+          deadline_at?: string;
+          neutral_site?: boolean;
+          status?: Database["public"]["Enums"]["game_status"];
+          status_detail?: string | null;
+          home_score?: number | null;
+          away_score?: number | null;
+          period?: number | null;
+          clock?: string | null;
+          last_synced_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "games_season_id_fkey";
+            columns: ["season_id"];
+            isOneToOne: false;
+            referencedRelation: "seasons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "games_week_id_fkey";
+            columns: ["week_id"];
+            isOneToOne: false;
+            referencedRelation: "weeks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "games_home_team_id_fkey";
+            columns: ["home_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "games_away_team_id_fkey";
+            columns: ["away_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lines: {
+        Row: {
+          id: string;
+          game_id: string;
+          home_spread: number;
+          price: number;
+          source: Database["public"]["Enums"]["line_source"];
+          set_by: string | null;
+          locked_at: string;
+          is_current: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          game_id: string;
+          home_spread: number;
+          price?: number;
+          source: Database["public"]["Enums"]["line_source"];
+          set_by?: string | null;
+          locked_at?: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          game_id?: string;
+          home_spread?: number;
+          price?: number;
+          source?: Database["public"]["Enums"]["line_source"];
+          set_by?: string | null;
+          locked_at?: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lines_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -149,10 +413,24 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      set_line: {
+        Args: {
+          p_game_id: string;
+          p_home_spread: number;
+          p_source?: Database["public"]["Enums"]["line_source"];
+        };
+        Returns: string;
+      };
+      refresh_week_rollup: {
+        Args: { p_week_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       job_status: "running" | "succeeded" | "failed";
       audit_action: "insert" | "update" | "delete";
+      game_status: "scheduled" | "in_progress" | "final" | "postponed" | "void";
+      line_source: "api" | "admin";
     };
     CompositeTypes: Record<never, never>;
   };
