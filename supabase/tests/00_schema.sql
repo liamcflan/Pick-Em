@@ -17,7 +17,7 @@ select ok((select relrowsecurity from pg_class where oid = 'public.audit_log'::r
 
 select is((select count(*)::int from public.app_settings), 1, 'exactly one settings row');
 select is((select default_starting_balance_cents from public.app_settings), 1000000, 'default balance is $10,000');
-select is((select spread_lock_day from public.app_settings), 2::smallint, 'default lock day is Tuesday');
+select is((select spread_lock_day from public.app_settings), 3::smallint, 'default lock day is Wednesday');
 select is((select hide_picks_until_kickoff from public.app_settings), false, 'picks visible by default');
 
 select throws_ok(
