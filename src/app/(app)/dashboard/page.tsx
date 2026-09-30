@@ -112,19 +112,20 @@ export default async function DashboardPage() {
       supabase.from("leagues").select("id, name, status"),
     ]);
 
-  const thisWeek = await loadThisWeek(
-    supabase,
-    user.id,
-    leagues ?? [],
-    (members ?? []).filter((m) => m.user_id === user.id),
+  // Site admins can read every league (support); the dashboard only shows the ones I am in.
+  const myMemberships = (members ?? []).filter((m) => m.user_id === user.id);
+  const leaguesImIn = (leagues ?? []).filter((l) =>
+    myMemberships.some((m) => m.league_id === l.id),
   );
+
+  const thisWeek = await loadThisWeek(supabase, user.id, leaguesImIn, myMemberships);
 
   const leagueName = new Map((leagues ?? []).map((l) => [l.id, l.name]));
   const names: Record<string, string> = {};
   for (const m of members ?? []) names[m.user_id] = m.profiles?.display_name ?? "Player";
 
   // My standing in each league I belong to.
-  const myLeagues = (leagues ?? []).map((l) => {
+  const myLeagues = leaguesImIn.map((l) => {
     const rows = (members ?? [])
       .filter((m) => m.league_id === l.id)
       .map((m) => {

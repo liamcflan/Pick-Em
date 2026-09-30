@@ -21,7 +21,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 | `/profile`                  | member       | Display name; logo upload (browser crop to 256 px WebP)                              |
 | `/admin`                    | site admin   | Schedule import, settlement buttons, recent job runs, season editor and week table     |
 | `/admin/lines?week=`        | site admin   | Pull consensus lines now, edit any line, void a game                                  |
-| `/admin/leagues`            | site admin   | Every league with status, player counts, creator and invite code (read-only)         |
+| `/admin/leagues`            | site admin   | Every league with status, player counts, creator and invite code; archive / restore   |
 | `/admin/settings`           | site admin   | Lock day/time, timezone, default balance, bet unit, pick hiding                       |
 | `/admin/audit`              | site admin   | Audit log viewer with filters                                                         |
 | `/api/revalidate`           | jobs         | Cache-tag invalidation, `x-job-secret` protected                                      |

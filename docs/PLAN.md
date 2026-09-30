@@ -67,6 +67,15 @@ Superseded by the league's official rules in [docs/RULES.md](RULES.md) (received
 
 ---
 
+### Answered 30 Sep 2026
+- **Season end** = the last regular-season week (18); winners are decided when it settles.
+- **Pick 'em on the forced bet** → the away team.
+- **Mid-season joining** is allowed; a new member starts with the league's starting balance and is
+  never forced or bye'd for weeks that closed before they joined.
+- **Deleting leagues**: never. Site admins archive instead (`archived_at`); reversible.
+- **Google sign-in**: a new Google Cloud project for this app. **Domain**: not yet.
+- **Repo**: may go public; nobody but the owner can push, and `main` is protected by CI.
+
 ## 2. Game rules spec
 
 Implementation reading of [docs/RULES.md](RULES.md).

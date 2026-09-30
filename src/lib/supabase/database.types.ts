@@ -419,6 +419,7 @@ export type Database = {
           starting_balance_cents: number;
           status: Database["public"]["Enums"]["league_status"];
           winner_user_id: string | null;
+          archived_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -431,6 +432,7 @@ export type Database = {
           starting_balance_cents: number;
           status?: Database["public"]["Enums"]["league_status"];
           winner_user_id?: string | null;
+          archived_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -443,6 +445,7 @@ export type Database = {
           starting_balance_cents?: number;
           status?: Database["public"]["Enums"]["league_status"];
           winner_user_id?: string | null;
+          archived_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -787,6 +790,7 @@ export type Database = {
       cancel_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
       jwt_role: { Args: Record<string, never>; Returns: string };
       refresh_game_deadlines: { Args: Record<string, never>; Returns: number };
+      archive_league: { Args: { p_league_id: string; p_archived?: boolean }; Returns: undefined };
       update_season: {
         Args: {
           p_season_id: string;

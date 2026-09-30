@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ArchiveLeagueButton } from "@/components/admin/archive-league-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/domain/money";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +15,7 @@ export default async function AdminLeaguesPage() {
     supabase
       .from("leagues")
       .select(
-        "id, name, status, invite_code, starting_balance_cents, created_at, created_by, winner_user_id, seasons(year)",
+        "id, name, status, invite_code, starting_balance_cents, created_at, created_by, winner_user_id, archived_at, seasons(year)",
       )
       .order("created_at", { ascending: false }),
     supabase.from("league_members").select("league_id, user_id, eliminated_at, left_at"),
@@ -37,8 +38,9 @@ export default async function AdminLeaguesPage() {
         <CardHeader>
           <CardTitle>All leagues</CardTitle>
           <CardDescription>
-            Read-only. Commissioners manage their own leagues; use the audit log to investigate a
-            dispute.
+            Commissioners manage their own leagues; use the audit log to investigate a dispute.
+            Archiving hides a league from its members and freezes it; nothing is deleted and it can
+            be restored.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -53,6 +55,7 @@ export default async function AdminLeaguesPage() {
                   <th className="py-2 pr-4">Start</th>
                   <th className="py-2 pr-4">Created</th>
                   <th className="py-2 pr-4">Code</th>
+                  <th className="py-2 pr-4"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -69,7 +72,13 @@ export default async function AdminLeaguesPage() {
                         ) : null}
                       </td>
                       <td className="py-2 pr-4">{l.seasons?.year ?? "—"}</td>
-                      <td className="py-2 pr-4">{l.status}</td>
+                      <td className="py-2 pr-4">
+                        {l.archived_at ? (
+                          <span className="text-muted-foreground">archived</span>
+                        ) : (
+                          l.status
+                        )}
+                      </td>
                       <td className="py-2 pr-4 tabular-nums">
                         {s.active}
                         {s.eliminated ? (
@@ -86,6 +95,9 @@ export default async function AdminLeaguesPage() {
                         </span>
                       </td>
                       <td className="py-2 pr-4 font-mono text-xs">{l.invite_code}</td>
+                      <td className="py-2 pr-4">
+                        <ArchiveLeagueButton leagueId={l.id} archived={!!l.archived_at} />
+                      </td>
                     </tr>
                   );
                 })}

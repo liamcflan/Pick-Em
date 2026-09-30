@@ -50,6 +50,8 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
   or by the member: every insert/update/delete with before/after values and request ids.
 - **Add a co-commissioner.** The league page → Members → "Make commish" (commissioners only).
 - **Re-run settlement now.** `/admin` → "Refresh scores and settle".
+- **Retire a dry-run league.** `/admin/leagues` → Archive. Members stop seeing it, nothing is
+  deleted, and Restore brings it back exactly as it was.
 
 ## When something is wrong
 

@@ -136,3 +136,24 @@ export async function updateSeason(
   revalidatePath("/admin");
   return { success: "Season saved." };
 }
+
+/** Retire or restore a league without deleting anything (members stop seeing it while archived). */
+export async function archiveLeague(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireSiteAdmin();
+  const parsed = z
+    .object({ leagueId: z.string().uuid(), archived: z.enum(["true", "false"]) })
+    .safeParse({ leagueId: formData.get("leagueId"), archived: formData.get("archived") });
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("archive_league", {
+    p_league_id: parsed.data.leagueId,
+    p_archived: parsed.data.archived === "true",
+  });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/admin/leagues");
+  return { success: parsed.data.archived === "true" ? "League archived." : "League restored." };
+}

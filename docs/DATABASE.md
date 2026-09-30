@@ -132,6 +132,7 @@ existing bet.
 | `starting_balance_cents` | Positive; changing it before play starts rebases balances             |
 | `status`                 | `open` → `complete` (`locked` reserved)                               |
 | `winner_user_id`?        | Set by `settle_week` when the league completes                        |
+| `archived_at`?           | Set by `archive_league()` (site admin): hidden from members, no picks or joins, skipped by settlement; reversible |
 
 ### league_members
 
@@ -241,6 +242,7 @@ checks membership itself), **commissioner**, **operator** = service role or site
 | `rotate_invite_code(league)`                  | commissioner | New 8-char code.                                                                                                                    |
 | `update_league(league, name, balance)`        | commissioner | Rename; rebase everyone's balance via `adjustment` rows, only before any pick exists.                                              |
 | `post_commissioner_note(league, text)`        | commissioner | News-feed note.                                                                                                                     |
+| `archive_league(league, archived)`            | operator     | Retire or restore a league without deleting rows. `is_league_member()` is false for an archived league, so every member-facing policy hides it. |
 | `is_league_member(league)`, `is_league_commissioner(league)`, `is_site_admin()` | any | Helpers used by RLS policies (security definer so policies do not recurse).            |
 | `current_week_id(season)`                     | any          | First week whose last deadline has not passed.                                                                                      |
 
@@ -285,7 +287,7 @@ allowed, `P0002` not found, `P0001` rule violation (message is user-safe), `2351
 
 ## Row-level security
 
-Policies as of migration 0007. "members" means members of that league (via `is_league_member`).
+Policies as of migration 0008. "members" means members of that league (via `is_league_member`).
 
 | Table            | SELECT                                                                                   | INSERT / UPDATE / DELETE                                            |
 | ---------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -321,6 +323,7 @@ reset` and the hosted project's migration runner (`supabase db push`).
 | `20260930210000_settlement`      | `settle_game`, `void_game`, `settle_week`, `weekly_action_check`, operator helpers          |
 | `20260930230000_profiles_storage`| `logos` bucket + policies, avatar ownership trigger, `refresh_game_deadlines`, tz check     |
 | `20260930235000_admin_oversight`  | Site-admin read policies on league data, `update_season`, audit trigger on seasons         |
+| `20260930236000_league_archive`   | `leagues.archived_at`, `archive_league`; archived leagues hidden, frozen and skipped by jobs |
 
 Conventions: one migration per feature; never edit a migration that has reached production (add a
 new one); every function `security definer` sets `search_path = ''` and schema-qualifies
