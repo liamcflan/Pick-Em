@@ -73,3 +73,70 @@ class SupabaseScheduleStore:
         self.client.table("job_runs").update(
             {"status": status, "finished_at": datetime.now(UTC).isoformat(), "detail": dict(detail)}
         ).eq("id", run_id).execute()
+
+
+class SupabaseLineStore(SupabaseScheduleStore):
+    """Adds the queries the line-lock job needs. Inherits job-run bookkeeping."""
+
+    def active_season(self) -> Mapping[str, Any] | None:
+        res = (
+            self.client.table("seasons").select("id, year").eq("is_active", True).limit(1).execute()
+        )
+        return res.data[0] if res.data else None
+
+    def week(self, season_id: str, week_number: int | None) -> Mapping[str, Any] | None:
+        q = self.client.table("weeks").select("id, week_number, spread_lock_at, last_deadline_at")
+        q = q.eq("season_id", season_id)
+        if week_number is not None:
+            q = q.eq("week_number", week_number)
+        else:
+            q = q.or_(
+                f"last_deadline_at.is.null,last_deadline_at.gt.{datetime.now(UTC).isoformat()}"
+            )
+        res = q.order("week_number").limit(1).execute()
+        return res.data[0] if res.data else None
+
+    def games_with_current_lines(self, week_id: str) -> list[Mapping[str, Any]]:
+        games = (
+            self.client.table("games")
+            .select("id, espn_event_id, status")
+            .eq("week_id", week_id)
+            .execute()
+            .data
+            or []
+        )
+        ids = [g["id"] for g in games]
+        if not ids:
+            return []
+        lines = (
+            self.client.table("lines")
+            .select("game_id, source")
+            .in_("game_id", ids)
+            .eq("is_current", True)
+            .execute()
+            .data
+            or []
+        )
+        source_by_game = {row["game_id"]: row["source"] for row in lines}
+        return [{**g, "current_line_source": source_by_game.get(g["id"])} for g in games]
+
+    def set_api_line(self, game_id: str, home_spread: float) -> None:
+        self.client.rpc(
+            "set_line", {"p_game_id": game_id, "p_home_spread": home_spread, "p_source": "api"}
+        ).execute()
+
+    def league_ids_for_season(self, season_id: str) -> list[str]:
+        res = self.client.table("leagues").select("id").eq("season_id", season_id).execute()
+        return [row["id"] for row in res.data or []]
+
+    def post_event(self, league_id: str, kind: str, payload: Mapping[str, Any]) -> None:
+        self.client.rpc(
+            "post_league_event",
+            {
+                "p_league_id": league_id,
+                "p_kind": kind,
+                "p_actor": None,
+                "p_subject": None,
+                "p_payload": dict(payload),
+            },
+        ).execute()
