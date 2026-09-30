@@ -48,7 +48,7 @@ Useful commands:
 pnpm check          # lint + format + typecheck + unit tests + python lint + pytest
 pnpm db:test        # pgTAP tests via the Supabase CLI (needs Docker)
 pnpm db:test:local  # pgTAP against a plain local Postgres 16 (no Docker; see scripts/db/)
-pnpm db:reset       # re-apply migrations + seed
+pnpm db:reset       # re-apply migrations + seed (an active 2026 season with week 5 open)
 pnpm db:types       # regenerate src/lib/supabase/database.types.ts
 pnpm test:e2e       # Playwright against a built app (pnpm build first)
 ```

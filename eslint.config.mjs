@@ -7,7 +7,9 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     // The Next.js app must never hold the Supabase service-role key: it bypasses RLS.
-    // Jobs (Python) are the only consumer. See SECURITY.md.
+    // Jobs (Python) are the only consumer. See SECURITY.md. Playwright tests under tests/ may
+    // use the *local* key to play the jobs' part (they never ship).
+    files: ["src/**"],
     rules: {
       "no-restricted-syntax": [
         "error",

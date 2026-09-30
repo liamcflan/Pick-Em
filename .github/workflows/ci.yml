@@ -104,6 +104,8 @@ jobs:
           status="$(supabase status -o json)"
           echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r '.API_URL' <<< "$status")" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY' <<< "$status")" >> "$GITHUB_ENV"
+          # The e2e "week" test plays the settlement job's part with the local service-role key.
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.SECRET_KEY // .SERVICE_ROLE_KEY' <<< "$status")" >> "$GITHUB_ENV"
       - name: Build against local Supabase
         run: pnpm build
       - name: Install Playwright browsers

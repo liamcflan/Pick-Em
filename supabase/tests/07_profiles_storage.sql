@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'alice@example.com', '{"display_name": "Alice"}'),
@@ -37,16 +37,20 @@ select throws_ok($$ update public.profiles set avatar_path = '00000000-0000-0000
   '23514', null, 'avatar path shape enforced (no traversal)');
 reset role;
 
--- ---- bob can read alice's logo but not remove it
+-- ---- bob can read alice's logo but not move it; deletes are policy-checked (Supabase blocks
+-- direct SQL deletes on storage.objects, so the delete policy is asserted rather than exercised)
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from storage.objects where bucket_id = 'logos'), 1, 'logos are readable by everyone');
-delete from storage.objects where bucket_id = 'logos';
-select is((select count(*)::int from storage.objects where bucket_id = 'logos'), 1, 'delete of another member''s logo is filtered out');
+update storage.objects set name = '00000000-0000-0000-0000-00000000000b/stolen.webp' where bucket_id = 'logos';
+select is((select name from storage.objects where bucket_id = 'logos'), '00000000-0000-0000-0000-00000000000a/logo-1.webp', 'update of another member''s logo is filtered out');
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
-delete from storage.objects where bucket_id = 'logos';
-select is((select count(*)::int from storage.objects where bucket_id = 'logos'), 0, 'owner can delete her logo');
+select throws_ok($$ update storage.objects set name = '00000000-0000-0000-0000-00000000000b/moved.webp' where bucket_id = 'logos' $$,
+  '42501', null, 'owner cannot move her logo into another folder');
 reset role;
+select policy_cmd_is('storage', 'objects', 'logos: owner deletes', 'DELETE', 'delete policy exists');
+select policy_roles_are('storage', 'objects', 'logos: owner deletes', array['authenticated'], 'only signed-in owners may delete');
+select policy_roles_are('storage', 'objects', 'logos: anyone can read', array['anon', 'authenticated'], 'read policy covers anon and members');
 
 -- ---- timezone change moves deadlines
 insert into public.seasons (id, year, is_active) values ('10000000-0000-0000-0000-000000000001', 2026, true);
