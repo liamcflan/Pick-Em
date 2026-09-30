@@ -67,13 +67,14 @@ test("a member resets their password from the emailed link and signs in with the
   await page.getByRole("link", { name: "Forgot password?" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /\S/ })).toBeVisible();
+  // Sending the email happens inside the action, so the confirmation can take a few seconds.
+  await expect(page.getByRole("status").filter({ hasText: /\S/ })).toBeVisible({ timeout: 20_000 });
 
   const link = await findResetLink(email);
   expect(link, "reset email received").toBeTruthy();
   await page.goto(link!);
   await expect(page).toHaveURL(/\/update-password$/);
-  await page.getByLabel("New password").fill(NEW_PASSWORD);
+  await page.getByLabel("New password", { exact: true }).fill(NEW_PASSWORD);
   await page.getByRole("button", { name: "Save password" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
@@ -88,7 +89,7 @@ test("a member resets their password from the emailed link and signs in with the
 test("a signed-in member can change their password from the profile page", async ({ page }) => {
   const email = await signUp(page, "Changer");
   await page.goto("/profile");
-  await page.getByLabel("New password").fill(NEW_PASSWORD);
+  await page.getByLabel("New password", { exact: true }).fill(NEW_PASSWORD);
   await page.getByLabel("Confirm new password").fill(NEW_PASSWORD);
   await page.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByRole("status").filter({ hasText: /\S/ })).toHaveText("Password updated.");
