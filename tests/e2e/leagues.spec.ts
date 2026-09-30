@@ -42,7 +42,9 @@ test("create a league, join it by invite code, both appear on the leaderboard", 
   await b.goto("/leagues");
   await b.getByLabel("Invite code").fill(code!);
   await b.getByRole("button", { name: "Join league" }).click();
-  await expect(b.getByRole("alert")).toContainText("already in that league");
+  await expect(b.getByRole("alert").filter({ hasText: /\S/ })).toContainText(
+    "already in that league",
+  );
 
   // Alice sees Bob join in the news feed and on her dashboard.
   await a.reload();
@@ -60,5 +62,5 @@ test("a wrong invite code is rejected without revealing anything", async ({ page
   await page.goto("/leagues");
   await page.getByLabel("Invite code").fill("ZZZZ-ZZZZ");
   await page.getByRole("button", { name: "Join league" }).click();
-  await expect(page.getByRole("alert")).toContainText("not found");
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toContainText("not found");
 });

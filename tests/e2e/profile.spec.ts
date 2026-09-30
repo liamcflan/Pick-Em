@@ -14,6 +14,6 @@ test("rename yourself from the profile page", async ({ page }) => {
   await expect(page).toHaveURL(/\/profile$/);
   await page.getByLabel("Display name").fill("After Rename");
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("status").filter({ hasText: /\S/ })).toHaveText("Saved.");
   await expect(page.getByTestId("display-name")).toHaveText("After Rename");
 });
