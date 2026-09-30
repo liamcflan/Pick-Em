@@ -7,8 +7,19 @@ How to deploy, what happens each week, and what to do when something is off.
 1. **Supabase project** (free tier): create it, then from the repo run `supabase link` and
    `supabase db push` to apply `supabase/migrations/`. Enable the `pg_cron` and `pg_net`
    extensions (Dashboard → Database → Extensions).
-2. **Auth**: enable Email and Google providers; add the Google OAuth client id/secret; set the site
-   URL and redirect URL to `https://<app>/auth/callback`.
+2. **Auth** (Dashboard → Authentication):
+   - Providers: Email on; Google on with the OAuth client id/secret from your Google Cloud project
+     (authorised redirect URI there: `https://<project-ref>.supabase.co/auth/v1/callback`).
+   - URL configuration: Site URL `https://<app>`; Redirect URLs `https://<app>/**` (and
+     `http://localhost:3000/**` for local testing). Password-reset and confirmation links land on
+     `/auth/callback`, which then sends the member to `/update-password` or the dashboard.
+   - **Custom SMTP** (Settings → Auth → SMTP): the built-in sender is capped at a few emails per
+     hour and is meant for testing, so password resets would silently stall on a busy Sunday.
+     A free [Resend](https://resend.com) account (3,000 emails/month) or any SMTP provider works;
+     paste host, port, user, password and a sender address. Then raise the rate limit under
+     Auth → Rate limits.
+   - Keep the default email templates, or edit the wording; the Recovery template must keep
+     `{{ .ConfirmationURL }}`.
 3. **Vercel project** from the GitHub repo. Environment variables:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`,
    `JOB_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (the last
@@ -49,6 +60,10 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
 - **Someone disputes a pick.** `/admin/audit` → filter by the pick's row id (from the picks table)
   or by the member: every insert/update/delete with before/after values and request ids.
 - **Add a co-commissioner.** The league page → Members → "Make commish" (commissioners only).
+- **Someone forgot their password.** Nothing for you to do: "Forgot password?" on the sign-in
+  page emails a reset link, and `/profile` lets signed-in members change it. If the email never
+  arrives, check Authentication → Logs and the SMTP settings above; as a last resort Dashboard →
+  Authentication → Users → "Send password recovery".
 - **Re-run settlement now.** `/admin` → "Refresh scores and settle".
 - **Retire a dry-run league.** `/admin/leagues` → Archive. Members stop seeing it, nothing is
   deleted, and Restore brings it back exactly as it was.

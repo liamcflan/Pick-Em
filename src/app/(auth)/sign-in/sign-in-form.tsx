@@ -31,6 +31,7 @@ export function SignInForm({ next, initialError }: { next: string; initialError?
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" autoComplete="email" required />
+            <p className="text-muted-foreground text-xs">Your email is your username.</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">

@@ -16,7 +16,10 @@ export function ForgotPasswordForm() {
     <Card>
       <CardHeader>
         <CardTitle>Reset password</CardTitle>
-        <CardDescription>We&rsquo;ll email you a link to choose a new one.</CardDescription>
+        <CardDescription>
+          Enter the email you signed up with and we&rsquo;ll send a link to choose a new password.
+          Signed up with Google? Just use the Google button on the sign-in page.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form action={action} className="space-y-4">

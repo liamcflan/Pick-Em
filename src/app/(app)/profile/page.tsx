@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { LogoUploader } from "@/components/profile/logo-uploader";
+import { PasswordForm } from "@/components/profile/password-form";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -42,6 +43,17 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <ProfileForm displayName={displayName} email={user.email ?? ""} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Password</CardTitle>
+            <CardDescription>
+              At least 8 characters. Forgot it while signed out? Use the link on the sign-in page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasswordForm />
           </CardContent>
         </Card>
       </div>

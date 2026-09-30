@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { displayNameSchema, firstIssue } from "@/lib/auth/validation";
+import { displayNameSchema, firstIssue, passwordSchema } from "@/lib/auth/validation";
 import { isOwnAvatarPath } from "@/lib/domain/avatar";
 import { errorFields, log } from "@/lib/log";
 import { friendlyDbError } from "@/lib/supabase/errors";
@@ -86,4 +86,30 @@ export async function removeAvatar(
   if (before?.avatar_path) await supabase.storage.from("logos").remove([before.avatar_path]);
   revalidatePath("/", "layout");
   return { success: "Logo removed." };
+}
+
+/** Signed-in password change (also sets a first password for Google-only accounts). */
+export async function changePassword(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const user = await getUser();
+  if (!user) return { error: "Not signed in." };
+  const parsed = z
+    .object({ password: passwordSchema, confirm: z.string() })
+    .refine((v) => v.password === v.confirm, {
+      message: "Passwords do not match",
+      path: ["confirm"],
+    })
+    .safeParse({ password: formData.get("password"), confirm: formData.get("confirm") });
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    log.warn("password change failed", { user_id: user.id, reason: error.code ?? error.message });
+    return { error: error.message };
+  }
+  log.info("password changed", { user_id: user.id });
+  return { success: "Password updated." };
 }
