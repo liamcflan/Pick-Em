@@ -627,6 +627,90 @@ export type Database = {
           },
         ];
       };
+      picks: {
+        Row: {
+          id: string;
+          league_id: string;
+          user_id: string;
+          week_id: string;
+          game_id: string;
+          line_id: string;
+          side: Database["public"]["Enums"]["pick_side"];
+          wager_cents: number;
+          placed_by: Database["public"]["Enums"]["pick_placed_by"];
+          status: Database["public"]["Enums"]["pick_status"];
+          settled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          league_id: string;
+          user_id: string;
+          week_id: string;
+          game_id: string;
+          line_id: string;
+          side: Database["public"]["Enums"]["pick_side"];
+          wager_cents: number;
+          placed_by?: Database["public"]["Enums"]["pick_placed_by"];
+          status?: Database["public"]["Enums"]["pick_status"];
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          league_id?: string;
+          user_id?: string;
+          week_id?: string;
+          game_id?: string;
+          line_id?: string;
+          side?: Database["public"]["Enums"]["pick_side"];
+          wager_cents?: number;
+          placed_by?: Database["public"]["Enums"]["pick_placed_by"];
+          status?: Database["public"]["Enums"]["pick_status"];
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "picks_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "picks_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "picks_week_id_fkey";
+            columns: ["week_id"];
+            isOneToOne: false;
+            referencedRelation: "weeks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "picks_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "picks_line_id_fkey";
+            columns: ["line_id"];
+            isOneToOne: false;
+            referencedRelation: "lines";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       league_balances: {
@@ -678,6 +762,26 @@ export type Database = {
         Returns: undefined;
       };
       post_commissioner_note: { Args: { p_league_id: string; p_text: string }; Returns: undefined };
+      week_budget_cents: {
+        Args: { p_league_id: string; p_user_id: string; p_week_id: string };
+        Returns: number;
+      };
+      available_cents: {
+        Args: { p_league_id: string; p_user_id: string; p_week_id: string };
+        Returns: number;
+      };
+      place_pick: {
+        Args: {
+          p_league_id: string;
+          p_game_id: string;
+          p_side: Database["public"]["Enums"]["pick_side"];
+          p_wager_cents: number;
+        };
+        Returns: string;
+      };
+      delete_pick: { Args: { p_pick_id: string }; Returns: undefined };
+      take_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
+      cancel_bye: { Args: { p_league_id: string; p_week_id: string }; Returns: undefined };
     };
     Enums: {
       job_status: "running" | "succeeded" | "failed";
@@ -685,6 +789,9 @@ export type Database = {
       game_status: "scheduled" | "in_progress" | "final" | "postponed" | "void";
       line_source: "api" | "admin";
       league_status: "open" | "locked" | "complete";
+      pick_side: "home" | "away";
+      pick_status: "open" | "won" | "lost" | "push" | "void";
+      pick_placed_by: "member" | "system";
       member_role: "member" | "commissioner";
       ledger_kind: "initial" | "wager" | "payout" | "refund" | "adjustment";
       league_event_kind:

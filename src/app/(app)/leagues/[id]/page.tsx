@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { removeMember, setMemberRole } from "@/app/(app)/leagues/actions";
@@ -74,15 +75,20 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
             {active.length === 1 ? "" : "s"}
           </p>
         </div>
-        {me && !(isCommissioner && commissionerCount === 1) ? (
-          <form action={removeMember}>
-            <input type="hidden" name="leagueId" value={league.id} />
-            <input type="hidden" name="userId" value={user.id} />
-            <Button type="submit" variant="ghost" size="sm">
-              Leave league
-            </Button>
-          </form>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm">
+            <Link href={`/leagues/${league.id}/picks`}>Make picks</Link>
+          </Button>
+          {me && !(isCommissioner && commissionerCount === 1) ? (
+            <form action={removeMember}>
+              <input type="hidden" name="leagueId" value={league.id} />
+              <input type="hidden" name="userId" value={user.id} />
+              <Button type="submit" variant="ghost" size="sm">
+                Leave league
+              </Button>
+            </form>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
