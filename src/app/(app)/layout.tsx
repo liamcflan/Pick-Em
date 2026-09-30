@@ -24,6 +24,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <Link href="/dashboard" className="text-base font-semibold tracking-tight">
               Pick-Em
             </Link>
+            <Link href="/leagues" className="text-muted-foreground hover:text-foreground">
+              Leagues
+            </Link>
             {profile?.is_site_admin ? (
               <Link href="/admin" className="text-muted-foreground hover:text-foreground">
                 Admin

@@ -406,8 +406,239 @@ export type Database = {
           },
         ];
       };
+      leagues: {
+        Row: {
+          id: string;
+          season_id: string;
+          name: string;
+          invite_code: string;
+          created_by: string;
+          starting_balance_cents: number;
+          status: Database["public"]["Enums"]["league_status"];
+          winner_user_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          season_id: string;
+          name: string;
+          invite_code: string;
+          created_by: string;
+          starting_balance_cents: number;
+          status?: Database["public"]["Enums"]["league_status"];
+          winner_user_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          season_id?: string;
+          name?: string;
+          invite_code?: string;
+          created_by?: string;
+          starting_balance_cents?: number;
+          status?: Database["public"]["Enums"]["league_status"];
+          winner_user_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leagues_season_id_fkey";
+            columns: ["season_id"];
+            isOneToOne: false;
+            referencedRelation: "seasons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leagues_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leagues_winner_user_id_fkey";
+            columns: ["winner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      league_members: {
+        Row: {
+          id: string;
+          league_id: string;
+          user_id: string;
+          role: Database["public"]["Enums"]["member_role"];
+          joined_week_id: string | null;
+          bye_week_id: string | null;
+          eliminated_at: string | null;
+          eliminated_week_id: string | null;
+          left_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          league_id: string;
+          user_id: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          joined_week_id?: string | null;
+          bye_week_id?: string | null;
+          eliminated_at?: string | null;
+          eliminated_week_id?: string | null;
+          left_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          league_id?: string;
+          user_id?: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          joined_week_id?: string | null;
+          bye_week_id?: string | null;
+          eliminated_at?: string | null;
+          eliminated_week_id?: string | null;
+          left_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "league_members_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "league_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ledger: {
+        Row: {
+          id: string;
+          league_id: string;
+          user_id: string;
+          week_id: string | null;
+          pick_id: string | null;
+          kind: Database["public"]["Enums"]["ledger_kind"];
+          amount_cents: number;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          league_id: string;
+          user_id: string;
+          week_id?: string | null;
+          pick_id?: string | null;
+          kind: Database["public"]["Enums"]["ledger_kind"];
+          amount_cents: number;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          league_id?: string;
+          user_id?: string;
+          week_id?: string | null;
+          pick_id?: string | null;
+          kind?: Database["public"]["Enums"]["ledger_kind"];
+          amount_cents?: number;
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      league_events: {
+        Row: {
+          id: number;
+          league_id: string;
+          kind: Database["public"]["Enums"]["league_event_kind"];
+          actor_user_id: string | null;
+          subject_user_id: string | null;
+          payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          league_id: string;
+          kind: Database["public"]["Enums"]["league_event_kind"];
+          actor_user_id?: string | null;
+          subject_user_id?: string | null;
+          payload?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: never;
+          league_id?: string;
+          kind?: Database["public"]["Enums"]["league_event_kind"];
+          actor_user_id?: string | null;
+          subject_user_id?: string | null;
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "league_events_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "league_events_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "league_events_subject_user_id_fkey";
+            columns: ["subject_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
-    Views: Record<never, never>;
+    Views: {
+      league_balances: {
+        Row: {
+          league_id: string | null;
+          user_id: string | null;
+          balance_cents: number | null;
+          total_risked_cents: number | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       is_site_admin: {
         Args: Record<PropertyKey, never>;
@@ -425,12 +656,51 @@ export type Database = {
         Args: { p_week_id: string };
         Returns: undefined;
       };
+      is_league_member: { Args: { p_league_id: string }; Returns: boolean };
+      is_league_commissioner: { Args: { p_league_id: string }; Returns: boolean };
+      create_league: {
+        Args: { p_name: string; p_starting_balance_cents?: number | null };
+        Returns: string;
+      };
+      join_league: { Args: { p_code: string }; Returns: string };
+      set_member_role: {
+        Args: {
+          p_league_id: string;
+          p_user_id: string;
+          p_role: Database["public"]["Enums"]["member_role"];
+        };
+        Returns: undefined;
+      };
+      remove_member: { Args: { p_league_id: string; p_user_id: string }; Returns: undefined };
+      rotate_invite_code: { Args: { p_league_id: string }; Returns: string };
+      update_league: {
+        Args: { p_league_id: string; p_name: string; p_starting_balance_cents: number };
+        Returns: undefined;
+      };
+      post_commissioner_note: { Args: { p_league_id: string; p_text: string }; Returns: undefined };
     };
     Enums: {
       job_status: "running" | "succeeded" | "failed";
       audit_action: "insert" | "update" | "delete";
       game_status: "scheduled" | "in_progress" | "final" | "postponed" | "void";
       line_source: "api" | "admin";
+      league_status: "open" | "locked" | "complete";
+      member_role: "member" | "commissioner";
+      ledger_kind: "initial" | "wager" | "payout" | "refund" | "adjustment";
+      league_event_kind:
+        | "member_joined"
+        | "member_left"
+        | "member_removed"
+        | "role_changed"
+        | "member_eliminated"
+        | "bye_used"
+        | "forced_pick"
+        | "line_edited"
+        | "spreads_locked"
+        | "week_settled"
+        | "season_complete"
+        | "commissioner_note"
+        | "league_updated";
     };
     CompositeTypes: Record<never, never>;
   };
