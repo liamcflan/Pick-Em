@@ -1,0 +1,182 @@
+{
+  "leagues": [
+    {
+      "id": "28",
+      "abbreviation": "NFL",
+      "season": { "year": 2026, "type": { "id": "2", "type": 2, "name": "Regular Season" } }
+    }
+  ],
+  "season": { "type": 2, "year": 2026 },
+  "week": { "number": 5 },
+  "events": [
+    {
+      "id": "401772801",
+      "uid": "s:20~l:28~e:401772801",
+      "date": "2026-10-02T00:15Z",
+      "name": "Dallas Cowboys at New York Giants",
+      "shortName": "DAL @ NYG",
+      "season": { "year": 2026, "type": 2, "slug": "regular-season" },
+      "week": { "number": 5 },
+      "competitions": [
+        {
+          "id": "401772801",
+          "date": "2026-10-02T00:15Z",
+          "neutralSite": false,
+          "competitors": [
+            {
+              "id": "19",
+              "homeAway": "home",
+              "team": { "id": "19", "abbreviation": "NYG", "displayName": "New York Giants" },
+              "score": "0"
+            },
+            {
+              "id": "6",
+              "homeAway": "away",
+              "team": { "id": "6", "abbreviation": "DAL", "displayName": "Dallas Cowboys" },
+              "score": "0"
+            }
+          ],
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0:00",
+            "period": 0,
+            "type": {
+              "id": "1",
+              "name": "STATUS_SCHEDULED",
+              "state": "pre",
+              "completed": false,
+              "detail": "Thu, October 1st at 8:15 PM EDT",
+              "shortDetail": "10/1 - 8:15 PM EDT"
+            }
+          },
+          "odds": [
+            {
+              "provider": { "id": "58", "name": "ESPN BET" },
+              "details": "DAL -2.5",
+              "overUnder": 47.5,
+              "spread": 2.5
+            }
+          ]
+        }
+      ],
+      "status": {
+        "type": { "id": "1", "name": "STATUS_SCHEDULED", "state": "pre", "completed": false }
+      }
+    },
+    {
+      "id": "401772802",
+      "date": "2026-10-04T17:00Z",
+      "name": "Buffalo Bills at Kansas City Chiefs",
+      "shortName": "BUF @ KC",
+      "season": { "year": 2026, "type": 2, "slug": "regular-season" },
+      "week": { "number": 5 },
+      "competitions": [
+        {
+          "id": "401772802",
+          "date": "2026-10-04T17:00Z",
+          "neutralSite": false,
+          "competitors": [
+            {
+              "id": "12",
+              "homeAway": "home",
+              "team": { "id": "12", "abbreviation": "KC", "displayName": "Kansas City Chiefs" },
+              "score": "24"
+            },
+            {
+              "id": "2",
+              "homeAway": "away",
+              "team": { "id": "2", "abbreviation": "BUF", "displayName": "Buffalo Bills" },
+              "score": "27"
+            }
+          ],
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0:00",
+            "period": 4,
+            "type": {
+              "id": "3",
+              "name": "STATUS_FINAL",
+              "state": "post",
+              "completed": true,
+              "detail": "Final",
+              "shortDetail": "Final"
+            }
+          },
+          "odds": [
+            {
+              "provider": { "id": "58", "name": "ESPN BET" },
+              "details": "KC -3",
+              "overUnder": 51.5
+            }
+          ]
+        }
+      ],
+      "status": {
+        "type": { "id": "3", "name": "STATUS_FINAL", "state": "post", "completed": true }
+      }
+    },
+    {
+      "id": "401772803",
+      "date": "2026-10-06T00:15Z",
+      "name": "Green Bay Packers at Philadelphia Eagles",
+      "shortName": "GB @ PHI",
+      "season": { "year": 2026, "type": 2, "slug": "regular-season" },
+      "week": { "number": 5 },
+      "competitions": [
+        {
+          "id": "401772803",
+          "date": "2026-10-06T00:15Z",
+          "neutralSite": false,
+          "competitors": [
+            {
+              "id": "21",
+              "homeAway": "home",
+              "team": { "id": "21", "abbreviation": "PHI", "displayName": "Philadelphia Eagles" },
+              "score": "14"
+            },
+            {
+              "id": "9",
+              "homeAway": "away",
+              "team": { "id": "9", "abbreviation": "GB", "displayName": "Green Bay Packers" },
+              "score": "10"
+            }
+          ],
+          "status": {
+            "clock": 754.0,
+            "displayClock": "12:34",
+            "period": 3,
+            "type": {
+              "id": "2",
+              "name": "STATUS_IN_PROGRESS",
+              "state": "in",
+              "completed": false,
+              "detail": "12:34 - 3rd Quarter",
+              "shortDetail": "12:34 - 3rd"
+            }
+          }
+        }
+      ],
+      "status": {
+        "type": { "id": "2", "name": "STATUS_IN_PROGRESS", "state": "in", "completed": false }
+      }
+    },
+    {
+      "id": "401772999",
+      "date": "2026-08-15T00:00Z",
+      "name": "Preseason leftover that must be ignored",
+      "season": { "year": 2026, "type": 1, "slug": "preseason" },
+      "week": { "number": 5 },
+      "competitions": [
+        {
+          "id": "401772999",
+          "date": "2026-08-15T00:00Z",
+          "competitors": [
+            { "id": "1", "homeAway": "home", "team": { "id": "1", "abbreviation": "ATL" } },
+            { "id": "3", "homeAway": "away", "team": { "id": "3", "abbreviation": "CHI" } }
+          ],
+          "status": { "type": { "name": "STATUS_FINAL" } }
+        }
+      ]
+    }
+  ]
+}
