@@ -332,6 +332,12 @@ Goal: a league can run a full week without you touching the database. Ordered so
 
 **Done when:** two test users in two different leagues can play a simulated week end to end on the deployed site, and every table has RLS tests.
 
+**Status (30 Sep 2026, on `dev`):** items 1–7 and 10 are built and covered by CI (pgTAP on a
+real Supabase, Playwright including the simulated week). Item 8 is done except the season editor
+and league list; item 9 is folded into `settle_week` (a league completes when one player is left
+or when the last regular-season week settles), so no nightly job is needed. Remaining before
+go-live: the deploy checklist in [OPERATIONS.md](OPERATIONS.md), then the 13 Oct dry run.
+
 ### Phase 2 — Live (Nov, in season)
 - Minute-level score sync during game windows; live status (quarter, clock, score) on dashboard picks.
 - Cover-probability model + ESPN win probability shown per live pick.
