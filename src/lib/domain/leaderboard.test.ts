@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { rankRows, type LeaderboardRow } from "./leaderboard";
+import { rankRows, type LeaderboardRow } from "@/lib/domain/leaderboard";
 
 const row = (over: Partial<LeaderboardRow>): LeaderboardRow => ({
   userId: "u",

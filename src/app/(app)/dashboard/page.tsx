@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { rankRows } from "@/components/leagues/leaderboard";
+import { rankRows } from "@/lib/domain/leaderboard";
 import { NewsFeed, type FeedItem } from "@/components/leagues/news-feed";
 import { ThisWeek, type ThisWeekLeague } from "@/components/picks/this-week";
 import { Button } from "@/components/ui/button";

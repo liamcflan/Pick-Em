@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { SettlementButtons } from "@/components/admin/job-buttons";
 import { SyncScheduleForm } from "@/components/admin/sync-schedule-form";
@@ -44,14 +43,7 @@ export default async function AdminPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
-        <nav className="flex gap-3 text-sm">
-          <Link href="/admin/lines" className="text-muted-foreground hover:text-foreground">
-            Lines
-          </Link>
-        </nav>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>

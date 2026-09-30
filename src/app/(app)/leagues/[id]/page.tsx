@@ -33,7 +33,7 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
   const [{ data: members }, { data: balances }, { data: events }] = await Promise.all([
     supabase
       .from("league_members")
-      .select("user_id, role, eliminated_at, left_at, profiles(display_name)")
+      .select("user_id, role, eliminated_at, left_at, profiles(display_name, avatar_path)")
       .eq("league_id", id),
     supabase
       .from("league_balances")
@@ -62,6 +62,7 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
     totalRiskedCents: balanceById.get(m.user_id)?.total_risked_cents ?? 0,
     role: m.role,
     eliminatedAt: m.eliminated_at,
+    avatarPath: m.profiles?.avatar_path ?? null,
   }));
 
   const complete = league.status === "complete";
