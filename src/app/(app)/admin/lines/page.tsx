@@ -144,7 +144,7 @@ export default async function AdminLinesPage({ searchParams }: PageProps<"/admin
                 const home = g.home?.abbreviation ?? "HOME";
                 const away = g.away?.abbreviation ?? "AWAY";
                 const locked =
-                  new Date(g.deadline_at).getTime() <= now ||
+                  new Date(g.deadline_at).getTime() <= nowMs ||
                   g.status === "final" ||
                   g.status === "void";
                 return (
