@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { publicEnv, serverEnv } from "@/lib/env";
 import { errorFields, log } from "@/lib/log";
 
-export type JobName = "health" | "sync_schedule";
+export type JobName = "health" | "sync_schedule" | "lock_lines";
 
 export type JobResult =
   | { ok: true; status: number; body: Record<string, unknown> }

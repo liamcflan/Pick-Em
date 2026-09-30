@@ -78,7 +78,10 @@ the service-role key is read by the Python jobs alone.
 4. **Vercel project** linked to this repo. Add the environment variables above. Python functions
    under `api/` deploy automatically; verify with
    `curl -H "x-job-secret: $JOB_SECRET" https://<app>/api/jobs/health`.
-5. **Backups.** Add the `SUPABASE_DB_URL` repository secret and set the `BACKUPS_ENABLED`
+5. **Scheduling.** In the Supabase SQL editor run `supabase/cron/schedule.sql` after replacing the app URL and
+   `JOB_SECRET` placeholders. It stores both in Vault and schedules the Wednesday line lock and hourly
+   schedule refresh with pg_cron.
+6. **Backups.** Add the `SUPABASE_DB_URL` repository secret and set the `BACKUPS_ENABLED`
    repository variable to `true` to turn on the weekly `pg_dump` workflow.
 
 ## Repository layout
