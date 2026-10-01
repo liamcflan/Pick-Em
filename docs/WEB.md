@@ -18,6 +18,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 | `/leagues`                  | member       | Create a league / join by invite code                                                 |
 | `/leagues/[id]`             | member       | Leaderboard (avatars, this-week movement, busted badge), news feed, invite code and settings for commissioners, winner banner |
 | `/leagues/[id]/picks?week=` | member       | The weekly picks sheet: budget, bye card, one row per game with side buttons and a wager stepper, result badges once settled |
+| `/leagues/[id]/history?user=` | member     | A member's record against the spread, net, ROI, biggest win, and every pick with its result |
 | `/profile`                  | member       | Display name; logo upload (browser crop to 256 px WebP)                              |
 | `/admin`                    | site admin   | Schedule import, settlement buttons, recent job runs, season editor and week table     |
 | `/admin/lines?week=`        | site admin   | Pull consensus lines now, edit any line, void a game                                  |

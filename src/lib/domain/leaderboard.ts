@@ -9,6 +9,10 @@ export type LeaderboardRow = {
   avatarPath?: string | null;
   /** Net ledger movement in the current week (wagers, refunds, payouts). */
   weekDeltaCents?: number;
+  /** "7-3-1" against the spread. */
+  record?: string;
+  /** Link target for the row's name (pick history). */
+  href?: string;
 };
 
 /** Rank by balance desc, then fewer dollars risked. Eliminated members sort last. */

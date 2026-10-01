@@ -13,6 +13,7 @@ import { NewsFeed } from "@/components/leagues/news-feed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/domain/money";
+import { formatRecord } from "@/lib/domain/stats";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "League" };
@@ -75,6 +76,16 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
         .eq("league_id", id)
         .eq("week_id", currentWeek.id)
     : { data: [] as { user_id: string; amount_cents: number }[] };
+  const { data: stats } = await supabase
+    .from("league_member_stats")
+    .select("user_id, wins, losses, pushes")
+    .eq("league_id", id);
+  const recordByUser = new Map(
+    (stats ?? []).map((x) => [
+      x.user_id,
+      formatRecord({ wins: x.wins ?? 0, losses: x.losses ?? 0, pushes: x.pushes ?? 0 }),
+    ]),
+  );
   const weekDelta = new Map<string, number>();
   for (const r of weekRows ?? [])
     weekDelta.set(r.user_id, (weekDelta.get(r.user_id) ?? 0) + r.amount_cents);
@@ -96,6 +107,8 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
     eliminatedAt: m.eliminated_at,
     avatarPath: m.profiles?.avatar_path ?? null,
     weekDeltaCents: weekDelta.get(m.user_id) ?? 0,
+    record: recordByUser.get(m.user_id) ?? "0-0",
+    href: `/leagues/${id}/history?user=${m.user_id}`,
   }));
 
   const complete = league.status === "complete";
@@ -122,6 +135,9 @@ export default async function LeaguePage({ params }: PageProps<"/leagues/[id]">)
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="ghost">
+            <Link href={`/leagues/${league.id}/history`}>My picks</Link>
+          </Button>
           <Button asChild size="sm" variant={complete ? "outline" : "default"}>
             <Link href={`/leagues/${league.id}/picks`}>
               {complete ? "View picks" : "Make picks"}

@@ -1,5 +1,5 @@
 begin;
-select plan(59);
+select plan(61);
 
 -- ---- fixtures: season, weeks 3/5/14/18, four users, one league
 -- a seeded local stack already has an active season (seed.sql); the fixtures below take over
@@ -230,6 +230,16 @@ select is((select balance_cents from public.league_balances where league_id = (s
 select is((select winner_user_id from public.leagues where id = (select league_id from t2)), '00000000-0000-0000-0000-00000000000b'::uuid, 'tie goes to bob, who risked less');
 select is((select payload ->> 'reason' from public.league_events where kind = 'season_complete' and league_id = (select league_id from t2)), 'season_end', 'won at season end');
 select is((select count(*)::int from public.league_events where kind = 'week_settled'), 3, 'week_settled posted per open league (weeks 5 and 14 for the first league, 18 for the late one)');
+
+-- ---- member stats view (derived from picks; same visibility as picks)
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select results_eq(
+  $$ select wins, losses, pushes, voids, net_cents, biggest_win_cents from public.league_member_stats
+     where league_id = (select league_id from t) and user_id = auth.uid() $$,
+  $$ values (2, 1, 1, 1, -100000, 200000) $$,
+  'alice: 2-1-1 ATS, one void, net -1k, biggest win 2k');
+select is((select forced_picks from public.league_member_stats where league_id = (select league_id from t) and user_id = '00000000-0000-0000-0000-00000000000d'), 1, 'dave''s forced pick counted');
+reset role;
 
 select * from finish();
 rollback;

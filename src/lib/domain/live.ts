@@ -12,3 +12,16 @@ export function anyGameLive(
     return k - beforeMs <= nowMs && nowMs <= k + afterMs;
   });
 }
+
+/** True when a game is in progress but has not been refreshed for a while (feed trouble). */
+export function scoresDelayed(
+  games: { status: string; last_synced_at: string | null }[],
+  nowMs: number,
+  staleMs = 10 * 60 * 1000,
+): boolean {
+  return games.some(
+    (g) =>
+      g.status === "in_progress" &&
+      (!g.last_synced_at || nowMs - new Date(g.last_synced_at).getTime() > staleMs),
+  );
+}

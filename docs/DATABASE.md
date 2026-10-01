@@ -159,6 +159,9 @@ removed), `kind` (`ledger_kind`), `amount_cents` (signed), `note`?.
 The view **`league_balances`** (`security_invoker`) exposes `balance_cents = sum(amount)` and
 `total_risked_cents = sum(wagers)` per member. It is what leaderboards read.
 
+The view **`league_member_stats`** (`security_invoker`, over `picks`) gives each member's wins,
+losses, pushes, voids, open picks, settled money risked, net, biggest win and forced-pick count.
+
 ### picks
 
 `league_id`, `user_id`, `week_id`, `game_id` (unique together with league + user: one pick per
@@ -325,6 +328,7 @@ reset` and the hosted project's migration runner (`supabase db push`).
 | `20260930235000_admin_oversight`  | Site-admin read policies on league data, `update_season`, audit trigger on seasons         |
 | `20260930236000_league_archive`   | `leagues.archived_at`, `archive_league`; archived leagues hidden, frozen and skipped by jobs |
 | `20261001090000_live`             | `games` added to the Realtime publication (live scores stream to browsers)                 |
+| `20261001120000_member_stats`     | `league_member_stats` view: ATS record, net, risked, biggest win, forced picks per member  |
 
 Conventions: one migration per feature; never edit a migration that has reached production (add a
 new one); every function `security definer` sets `search_path = ''` and schema-qualifies

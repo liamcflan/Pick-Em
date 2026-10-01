@@ -6,7 +6,7 @@ import { LiveRefresher } from "@/components/live/live-refresher";
 import { ByeCard } from "@/components/picks/bye-card";
 import { PickRow, type PickRowGame, type PickRowPick } from "@/components/picks/pick-row";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { anyGameLive } from "@/lib/domain/live";
+import { anyGameLive, scoresDelayed } from "@/lib/domain/live";
 import { BET_UNIT_CENTS, formatMoney } from "@/lib/domain/money";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -68,6 +68,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
       budget: 0,
       nowMs,
       live: false,
+      scoresDelayed: false,
     };
 
   const [{ data: games }, { data: picks }, { data: available }, { data: budget }] =
@@ -75,7 +76,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
       supabase
         .from("games")
         .select(
-          "id, kickoff_at, deadline_at, status, home_score, away_score, period, clock, home:teams!games_home_team_id_fkey(abbreviation, name), away:teams!games_away_team_id_fkey(abbreviation, name)",
+          "id, kickoff_at, deadline_at, status, home_score, away_score, period, clock, last_synced_at, home:teams!games_home_team_id_fkey(abbreviation, name), away:teams!games_away_team_id_fkey(abbreviation, name)",
         )
         .eq("week_id", week.id)
         .order("kickoff_at"),
@@ -138,6 +139,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
     budget: budget ?? 0,
     nowMs,
     live: anyGameLive(games ?? [], nowMs),
+    scoresDelayed: scoresDelayed(games ?? [], nowMs),
   };
 }
 
@@ -154,6 +156,7 @@ export default async function PicksPage({
   const data = await loadPicksData(id, user.id, requested);
   if (!data) notFound();
   const { league, member, weeks, week, games, picks, available, budget, nowMs, live } = data;
+  const delayed = data.scoresDelayed;
 
   if (!member) notFound();
   if (!week) {
@@ -182,8 +185,16 @@ export default async function PicksPage({
           </h1>
           <p className="text-muted-foreground text-sm">
             Bets are whole thousands. Each game locks at 11:59 PM Eastern the night before it is
-            played.
+            played.{" "}
+            <Link href={`/leagues/${league.id}/history`} className="hover:underline">
+              Pick history
+            </Link>
           </p>
+          {delayed ? (
+            <p className="text-sm text-amber-700 dark:text-amber-400" role="status">
+              Scores are delayed: the last update was more than ten minutes ago.
+            </p>
+          ) : null}
         </div>
         <nav className="flex flex-wrap gap-1 text-sm">
           {weeks.map((w) => (

@@ -728,6 +728,22 @@ export type Database = {
         };
         Relationships: [];
       };
+      league_member_stats: {
+        Row: {
+          league_id: string | null;
+          user_id: string | null;
+          wins: number | null;
+          losses: number | null;
+          pushes: number | null;
+          voids: number | null;
+          open_picks: number | null;
+          settled_risked_cents: number | null;
+          net_cents: number | null;
+          biggest_win_cents: number | null;
+          forced_picks: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       is_site_admin: {
