@@ -27,10 +27,9 @@ jobs:
           languages: ${{ matrix.language }}
           queries: security-and-quality
       - uses: github/codeql-action/analyze@v3
-        # GitHub only offers code-scanning uploads to organization accounts, so on this
-        # personal-account repo the upload is refused even though the analysis itself runs.
-        # Keep the scan informational (results are in the job log) rather than failing CI.
-        # Flip this to false if the repo ever moves to an organization with Advanced Security.
-        continue-on-error: true
+        # The repository is public with Code Scanning enabled, so uploads succeed and findings
+        # block the release PR. If it ever goes private again, set this back to true: uploads
+        # are refused on private personal-account repos and would turn CI red.
+        continue-on-error: false
         with:
           category: /language:${{ matrix.language }}
