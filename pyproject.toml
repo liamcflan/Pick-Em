@@ -28,6 +28,7 @@ select = ["E", "F", "I", "B", "UP", "N", "W", "SIM", "RUF", "S"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106"]  # asserts and dummy secrets are fine in tests
+"api/**" = ["N801"]  # Vercel requires the lowercase class name `handler`
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

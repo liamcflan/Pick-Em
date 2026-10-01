@@ -8,4 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pickem.jobs.sync_finals import run
 from pickem.vercel import make_handler
 
-handler = make_handler(run, job_name="sync_finals")
+
+# Vercel only recognises a Python function by a top-level `class handler(...)` or `app = ...`;
+# a plain `handler = ...` assignment is skipped, so subclass the generated class under that name.
+class handler(make_handler(run, job_name="sync_finals")):
+    pass

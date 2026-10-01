@@ -14,7 +14,7 @@ to run. See [adr/0001-stack.md](adr/0001-stack.md).
 ## Anatomy of a job
 
 ```
-api/jobs/lock_lines.py          # handler = make_handler(run, job_name="lock_lines")
+api/jobs/lock_lines.py          # class handler(make_handler(run, job_name="lock_lines")): pass
 pickem/jobs/lock_lines.py       # run(JobRequest) -> JobResponse; lock_lines(store, ...) pure-ish
 pickem/store.py                 # Supabase*Store: the only place that talks to the database
 tests/python/test_lock_lines.py # FakeStore + recorded ESPN fixture
