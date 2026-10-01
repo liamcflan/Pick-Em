@@ -65,20 +65,19 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str)
 
 
-_configured = False
+_state = {"configured": False}
 
 
 def configure_logging(level: int = logging.INFO) -> None:
     """Install the JSON formatter on the root logger exactly once."""
-    global _configured
-    if _configured:
+    if _state["configured"]:
         return
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     root = logging.getLogger()
     root.handlers[:] = [handler]
     root.setLevel(level)
-    _configured = True
+    _state["configured"] = True
 
 
 def get_logger(name: str) -> logging.Logger:
