@@ -20,7 +20,9 @@ How to deploy, what happens each week, and what to do when something is off.
      Auth → Rate limits.
    - Keep the default email templates, or edit the wording; the Recovery template must keep
      `{{ .ConfirmationURL }}`.
-3. **Vercel project** from the GitHub repo. Environment variables:
+3. **Vercel project** from the GitHub repo. Environment variables: copy `.env.vercel.example` to
+   `.env.vercel` (gitignored), fill it in (each line says where its value comes from), and use
+   **Import .env** on the Environment Variables page. They are:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`,
    `JOB_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (the last
    two are read by the Python functions only). Optional: `RESEND_API_KEY` and
