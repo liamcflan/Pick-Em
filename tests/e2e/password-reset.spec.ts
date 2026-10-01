@@ -67,6 +67,9 @@ test("a member resets their password from the emailed link and signs in with the
   await expect(page).toHaveURL(/\/sign-in$/);
 
   await page.getByRole("link", { name: "Forgot password?" }).click();
+  // both pages have an "Email" field; wait for the navigation so we fill the right one
+  await expect(page).toHaveURL(/\/forgot-password$/);
+  await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send reset link" }).click();
 
