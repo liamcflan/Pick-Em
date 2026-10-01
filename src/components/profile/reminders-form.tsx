@@ -26,7 +26,7 @@ export function RemindersForm({ enabled }: { enabled: boolean }) {
       </label>
       <FormMessage state={state} />
       <SubmitButton size="sm" variant="outline" pendingText="Saving…">
-        Save
+        Save reminders
       </SubmitButton>
     </form>
   );

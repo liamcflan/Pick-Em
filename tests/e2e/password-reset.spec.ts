@@ -54,6 +54,8 @@ test("forgot-password form never reveals whether an email exists", async ({ page
 test("a member resets their password from the emailed link and signs in with the new one", async ({
   page,
 }) => {
+  // sign-up, sign-out, request, mail-catcher polling (up to 30 s) and two more sign-ins
+  test.setTimeout(120_000);
   const reachable = await fetch(`${MAIL_API}/api/v1/messages?limit=1`).then(
     (r) => r.ok,
     () => false,
