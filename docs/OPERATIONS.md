@@ -24,7 +24,8 @@ How to deploy, what happens each week, and what to do when something is off.
    `.env.vercel` (gitignored), fill it in (each line says where its value comes from), and use
    **Import .env** on the Environment Variables page. They are:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`,
-   `JOB_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (the last
+   `JOB_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL` (Settings → Data API → Project URL),
+   `SUPABASE_SERVICE_ROLE_KEY` (Settings → API Keys → Secret key; the last
    two are read by the Python functions only). Optional: `RESEND_API_KEY` and
    `REMINDER_FROM_EMAIL` (a verified sender on your Resend account) turn on the picks-due
    reminder emails; without them that job is a no-op. Production tracks `main`; `dev` deploys previews.
