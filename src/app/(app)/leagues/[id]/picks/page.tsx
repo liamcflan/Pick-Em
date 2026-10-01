@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { LiveRefresher } from "@/components/live/live-refresher";
 import { ByeCard } from "@/components/picks/bye-card";
 import { PickRow, type PickRowGame, type PickRowPick } from "@/components/picks/pick-row";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { anyGameLive } from "@/lib/domain/live";
 import { BET_UNIT_CENTS, formatMoney } from "@/lib/domain/money";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -65,6 +67,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
       available: 0,
       budget: 0,
       nowMs,
+      live: false,
     };
 
   const [{ data: games }, { data: picks }, { data: available }, { data: budget }] =
@@ -72,7 +75,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
       supabase
         .from("games")
         .select(
-          "id, kickoff_at, deadline_at, status, home_score, away_score, home:teams!games_home_team_id_fkey(abbreviation, name), away:teams!games_away_team_id_fkey(abbreviation, name)",
+          "id, kickoff_at, deadline_at, status, home_score, away_score, period, clock, home:teams!games_home_team_id_fkey(abbreviation, name), away:teams!games_away_team_id_fkey(abbreviation, name)",
         )
         .eq("week_id", week.id)
         .order("kickoff_at"),
@@ -117,6 +120,10 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
       g.home_score !== null && g.away_score !== null && g.status !== "scheduled"
         ? `${g.away?.abbreviation} ${g.away_score} – ${g.home?.abbreviation} ${g.home_score}`
         : null,
+    homeScore: g.home_score,
+    awayScore: g.away_score,
+    period: g.period,
+    clock: g.clock,
     dayLabel: dayFmt.format(new Date(g.kickoff_at)),
   })) as (PickRowGame & { dayLabel: string })[];
 
@@ -130,6 +137,7 @@ async function loadPicksData(leagueId: string, userId: string, requestedWeek: nu
     available: available ?? 0,
     budget: budget ?? 0,
     nowMs,
+    live: anyGameLive(games ?? [], nowMs),
   };
 }
 
@@ -145,7 +153,7 @@ export default async function PicksPage({
   const requested = typeof sp.week === "string" ? Number(sp.week) : NaN;
   const data = await loadPicksData(id, user.id, requested);
   if (!data) notFound();
-  const { league, member, weeks, week, games, picks, available, budget, nowMs } = data;
+  const { league, member, weeks, week, games, picks, available, budget, nowMs, live } = data;
 
   if (!member) notFound();
   if (!week) {
@@ -163,6 +171,7 @@ export default async function PicksPage({
 
   return (
     <div className="space-y-6">
+      {live ? <LiveRefresher weekId={week.id} /> : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">

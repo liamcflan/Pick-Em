@@ -11,6 +11,7 @@ import {
 import { FormMessage } from "@/components/auth/form-message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
+import { coverLabel, coverProbability, fractionRemaining } from "@/lib/domain/probability";
 import { formatSpread, sideSpread } from "@/lib/domain/spread";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,10 @@ export type PickRowGame = {
   locked: boolean;
   status: string;
   score: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  period: number | null;
+  clock: string | null;
 };
 
 export type PickRowPick = {
@@ -78,6 +83,22 @@ export function PickRow({
   const [delState, delAction] = useActionState<PickActionState, FormData>(deletePick, {});
 
   const maxUnits = availableUnits + (pick?.units ?? 0);
+  const live =
+    pick &&
+    game.status === "in_progress" &&
+    game.homeSpread !== null &&
+    game.homeScore !== null &&
+    game.awayScore !== null
+      ? coverLabel(
+          coverProbability({
+            homeScore: game.homeScore,
+            awayScore: game.awayScore,
+            homeSpread: game.homeSpread,
+            side: pick.side,
+            fractionRemaining: fractionRemaining(game.status, game.period, game.clock),
+          }),
+        )
+      : null;
   const canBet = !game.locked && game.homeSpread !== null && !onBye && game.status === "scheduled";
   const dirty = pick ? pick.side !== side || pick.units !== units : side !== null;
 
@@ -112,8 +133,13 @@ export function PickRow({
         </div>
         <div className="text-muted-foreground text-xs">
           {game.score
-            ? `${game.status === "final" ? "Final" : "Live"} · ${game.score}`
+            ? `${game.status === "final" ? "Final" : `Live${game.period ? ` Q${game.period} ${game.clock ?? ""}` : ""}`} · ${game.score}`
             : game.kickoffLabel}
+          {live ? (
+            <span className="text-foreground ml-2 font-medium" data-testid="cover-probability">
+              {live} to cover
+            </span>
+          ) : null}
           {" · "}
           {game.locked ? "locked" : `picks close ${game.deadlineLabel}`}
         </div>

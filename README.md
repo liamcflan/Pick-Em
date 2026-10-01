@@ -98,6 +98,7 @@ Python functions under `api/jobs/`, called by pg_cron through `public.call_job()
 | `lock_lines`          | Wednesday mornings      | Store the consensus spread for each game of the week (admins may edit)    |
 | `sync_finals`         | hourly                  | Refresh scores for weeks in play and call `settle_week` (payouts, busts)  |
 | `weekly_action_check` | hourly                  | After a week's last deadline: automatic byes and forced 1k underdog picks |
+| `sync_live`           | every 2 min, game days  | Live scores and clock while games are on; grades finals as they happen    |
 | `health`              | on demand               | Proves the runtime and job secret work                                    |
 
 ## Repository layout

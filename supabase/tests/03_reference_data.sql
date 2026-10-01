@@ -33,33 +33,33 @@ select throws_ok(
 -- games: Thursday night (EDT), Sunday (EDT), Sunday night after DST ends (EST), Sunday afternoon (EST)
 insert into public.games (id, season_id, week_id, espn_event_id, home_team_id, away_team_id, kickoff_at) values
   ('30000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000005', 'e1',
-    (select id from public.teams where abbreviation = 'NYG'), (select id from public.teams where abbreviation = 'DAL'), '2026-10-02 00:15+00'),
+    (select id from public.teams where abbreviation = 'NYG'), (select id from public.teams where abbreviation = 'DAL'), '2030-10-02 00:15+00'),
   ('30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000005', 'e2',
-    (select id from public.teams where abbreviation = 'KC'),  (select id from public.teams where abbreviation = 'BUF'), '2026-10-04 17:00+00'),
+    (select id from public.teams where abbreviation = 'KC'),  (select id from public.teams where abbreviation = 'BUF'), '2030-10-04 17:00+00'),
   ('30000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000009', 'e3',
-    (select id from public.teams where abbreviation = 'PHI'), (select id from public.teams where abbreviation = 'GB'),  '2026-11-02 01:15+00'),
+    (select id from public.teams where abbreviation = 'PHI'), (select id from public.teams where abbreviation = 'GB'),  '2030-11-02 01:15+00'),
   ('30000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000009', 'e4',
-    (select id from public.teams where abbreviation = 'MIA'), (select id from public.teams where abbreviation = 'NYJ'), '2026-11-01 18:00+00');
+    (select id from public.teams where abbreviation = 'MIA'), (select id from public.teams where abbreviation = 'NYJ'), '2030-11-01 18:00+00');
 
 -- ---- deadline trigger (23:59 America/New_York the day before kickoff)
-select is((select deadline_at from public.games where espn_event_id = 'e1'), '2026-10-01 03:59+00'::timestamptz,
+select is((select deadline_at from public.games where espn_event_id = 'e1'), '2030-10-01 03:59+00'::timestamptz,
   'Thu 8:15pm EDT game -> Wed 23:59 EDT');
-select is((select deadline_at from public.games where espn_event_id = 'e2'), '2026-10-04 03:59+00'::timestamptz,
+select is((select deadline_at from public.games where espn_event_id = 'e2'), '2030-10-04 03:59+00'::timestamptz,
   'Sun 1pm EDT game -> Sat 23:59 EDT');
-select is((select deadline_at from public.games where espn_event_id = 'e3'), '2026-11-01 03:59+00'::timestamptz,
+select is((select deadline_at from public.games where espn_event_id = 'e3'), '2030-11-01 03:59+00'::timestamptz,
   'Sun 8:15pm EST (after fall-back) -> Sat 23:59 EDT (before fall-back)');
-select is((select deadline_at from public.games where espn_event_id = 'e4'), '2026-11-01 03:59+00'::timestamptz,
+select is((select deadline_at from public.games where espn_event_id = 'e4'), '2030-11-01 03:59+00'::timestamptz,
   'Sun 1pm EST game -> Sat 23:59 EDT');
 
-update public.games set kickoff_at = '2026-10-05 00:20+00' where espn_event_id = 'e2';
-select is((select deadline_at from public.games where espn_event_id = 'e2'), '2026-10-04 03:59+00'::timestamptz,
+update public.games set kickoff_at = '2030-10-05 00:20+00' where espn_event_id = 'e2';
+select is((select deadline_at from public.games where espn_event_id = 'e2'), '2030-10-04 03:59+00'::timestamptz,
   'deadline recomputed when kickoff changes');
 
 -- ---- week rollups
-select is((select first_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-02 00:15+00'::timestamptz, 'week first kickoff');
-select is((select last_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-05 00:20+00'::timestamptz, 'week last kickoff');
+select is((select first_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2030-10-02 00:15+00'::timestamptz, 'week first kickoff');
+select is((select last_kickoff_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2030-10-05 00:20+00'::timestamptz, 'week last kickoff');
 select is((select last_game_id from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '30000000-0000-0000-0000-000000000002'::uuid, 'week last game');
-select is((select last_deadline_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2026-10-04 03:59+00'::timestamptz, 'week last deadline');
+select is((select last_deadline_at from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '2030-10-04 03:59+00'::timestamptz, 'week last deadline');
 
 update public.games set status = 'void' where espn_event_id = 'e2';
 select is((select last_game_id from public.weeks where season_id = '10000000-0000-0000-0000-000000000001' and week_number = 5), '30000000-0000-0000-0000-000000000001'::uuid, 'void games excluded from rollup');

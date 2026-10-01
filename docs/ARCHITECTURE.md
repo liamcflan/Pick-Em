@@ -75,7 +75,8 @@ The UI only mirrors these rules for a good experience (disabled buttons, "picks 
 3. **Picks** – members bet from the picks sheet until 11:59 PM the night before each game.
 4. **Action check** – `weekly_action_check` (hourly) runs once the week's last deadline has
    passed: auto byes and forced picks.
-5. **Results** – `sync_finals` (hourly) refreshes scores and calls `settle_week`, which grades
+5. **Results** – `sync_live` (every two minutes while games are on) and `sync_finals` (hourly
+   safety net) refresh scores and call `settle_week`, which grades
    finished games immediately and settles the week when everything is final: payouts,
    eliminations, `week_settled` in the news feed, winners.
 6. **Season end** – week 18 settling completes every open league with the highest balance (ties
@@ -87,7 +88,10 @@ The UI only mirrors these rules for a good experience (disabled buttons, "picks 
   path; the leaderboard is a `sum()` over `ledger_member_idx`.
 - `revalidatePath` after actions keeps the router cache honest; `/api/revalidate` lets jobs
   invalidate tags when they change reference data.
-- The client bundle is small: only forms and the logo uploader are client components.
+- The client bundle is small: only forms, the logo uploader and the Realtime refresher are client
+  components. While a game is on, pages subscribe to `games` changes over one websocket and
+  re-render on updates; the cover probability (Stern's normal-margin model, `src/lib/domain/probability.ts`)
+  is computed at render time from score, clock and the pick's own line.
 - Scaling notes (materialised leaderboard, batching settlement) are in PLAN.md §6b; none are
   needed at the target size (~5k users).
 

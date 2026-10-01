@@ -67,7 +67,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 Pure, unit-tested modules with no React or env dependency: `money` (cents ⇄ dollars, bet unit),
 `spread` (side spread, formatting), `invite-code` (normalise/format), `events` (news-feed
 sentences), `leaderboard` (ranking with tie-breaks), `avatar` (paths, URLs, initials), `audit`
-(field diffs for the viewer).
+(field diffs for the viewer), `probability` (in-game chance to cover), `live` (is anything in play).
 
 ## Components
 

@@ -42,6 +42,9 @@ select cron.schedule('pickem-sync-schedule', '15 9 * * *', $$ select public.call
 -- Finals + settlement: hourly for weeks in play (Phase 2 adds a minute-level live job).
 select cron.schedule('pickem-sync-finals', '45 * * * *', $$ select public.call_job('sync_finals') $$);
 
+-- Live scores: every two minutes; the job returns at once unless a game is in play.
+select cron.schedule('pickem-sync-live', '*/2 * * * *', $$ select public.call_job('sync_live') $$);
+
 -- Bye / forced-pick check: hourly at :05, so it runs a few minutes after each 11:59 PM ET deadline.
 select cron.schedule('pickem-weekly-action-check', '5 * * * *', $$ select public.call_job('weekly_action_check') $$);
 

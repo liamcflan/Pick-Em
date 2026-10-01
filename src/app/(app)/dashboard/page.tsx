@@ -4,10 +4,13 @@ import { redirect } from "next/navigation";
 
 import { rankRows } from "@/lib/domain/leaderboard";
 import { NewsFeed, type FeedItem } from "@/components/leagues/news-feed";
+import { LiveRefresher } from "@/components/live/live-refresher";
 import { ThisWeek, type ThisWeekLeague } from "@/components/picks/this-week";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { anyGameLive } from "@/lib/domain/live";
 import { BET_UNIT_CENTS, formatMoney } from "@/lib/domain/money";
+import { coverLabel, coverProbability, fractionRemaining } from "@/lib/domain/probability";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -47,7 +50,7 @@ async function loadThisWeek(
   const { data: picks } = await supabase
     .from("picks")
     .select(
-      "id, league_id, side, wager_cents, status, placed_by, games(status, home_score, away_score, home:teams!games_home_team_id_fkey(abbreviation), away:teams!games_away_team_id_fkey(abbreviation))",
+      "id, league_id, side, wager_cents, status, placed_by, lines(home_spread), games(status, kickoff_at, home_score, away_score, period, clock, home:teams!games_home_team_id_fkey(abbreviation), away:teams!games_away_team_id_fkey(abbreviation))",
     )
     .eq("user_id", userId)
     .eq("week_id", week.id)
@@ -74,6 +77,23 @@ async function loadThisWeek(
             g && g.status !== "scheduled" && g.home_score !== null && g.away_score !== null
               ? `${g.status === "final" ? "Final" : "Live"} ${away} ${g.away_score}–${home} ${g.home_score}`
               : null,
+          cover:
+            g &&
+            g.status === "in_progress" &&
+            g.home_score !== null &&
+            g.away_score !== null &&
+            p.lines?.home_spread !== undefined &&
+            p.lines?.home_spread !== null
+              ? coverLabel(
+                  coverProbability({
+                    homeScore: g.home_score,
+                    awayScore: g.away_score,
+                    homeSpread: p.lines.home_spread,
+                    side: p.side,
+                    fractionRemaining: fractionRemaining(g.status, g.period, g.clock),
+                  }),
+                )
+              : null,
         };
       });
     const status: ThisWeekLeague["status"] = m?.eliminated_at
@@ -87,7 +107,11 @@ async function loadThisWeek(
             : "none";
     return { id: l.id, name: l.name, status, picks: mine };
   });
-  return { weekNumber: week.week_number, leagues: byLeague };
+  const live = anyGameLive(
+    (picks ?? []).flatMap((p) => (p.games ? [p.games] : [])),
+    nowMs,
+  );
+  return { weekId: week.id, weekNumber: week.week_number, leagues: byLeague, live };
 }
 
 export default async function DashboardPage() {
@@ -157,6 +181,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {thisWeek?.live ? <LiveRefresher weekId={thisWeek.weekId} /> : null}
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

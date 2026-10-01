@@ -176,3 +176,26 @@ class SupabaseSettlementStore(SupabaseLineStore):
     def weekly_action_check(self, week_id: str) -> Mapping[str, Any]:
         res = self.client.rpc("weekly_action_check", {"p_week_id": week_id}).execute()
         return res.data or {}
+
+    def live_weeks(self, season_id: str, now: datetime) -> list[Mapping[str, Any]]:
+        """Weeks with a game in progress, or one that kicked off in the last six hours / kicks
+        off in the next fifteen minutes (ESPN can lag a little on the status flip)."""
+        from datetime import timedelta
+
+        lo = (now - timedelta(hours=6)).isoformat()
+        hi = (now + timedelta(minutes=15)).isoformat()
+        res = (
+            self.client.table("games")
+            .select("week_id, weeks(id, week_number)")
+            .eq("season_id", season_id)
+            .or_(
+                f"status.eq.in_progress,and(status.eq.scheduled,kickoff_at.gte.{lo},kickoff_at.lte.{hi})"
+            )
+            .execute()
+        )
+        seen: dict[str, Mapping[str, Any]] = {}
+        for row in res.data or []:
+            week = row.get("weeks") or {}
+            if week.get("id") and week["id"] not in seen:
+                seen[week["id"]] = {"id": week["id"], "week_number": week["week_number"]}
+        return sorted(seen.values(), key=lambda w: int(w["week_number"]))

@@ -13,6 +13,8 @@ export type ThisWeekPick = {
   status: string;
   placedBy: "member" | "system";
   score: string | null;
+  /** "72%" while the game is live, else null. */
+  cover: string | null;
 };
 
 export type ThisWeekLeague = {
@@ -67,6 +69,11 @@ export function ThisWeek({
                   <span className="text-right whitespace-nowrap">
                     {p.score ? (
                       <span className="text-muted-foreground text-xs">{p.score}</span>
+                    ) : null}
+                    {p.cover ? (
+                      <span className="ml-2 text-xs font-medium" data-testid="cover-probability">
+                        {p.cover} to cover
+                      </span>
                     ) : null}
                     <ResultBadge status={p.status} placedBy={p.placedBy} />
                   </span>
