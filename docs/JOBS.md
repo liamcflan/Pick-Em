@@ -41,6 +41,7 @@ tests/python/test_lock_lines.py # FakeStore + recorded ESPN fixture
 | `POST /api/jobs/sync_finals`     | `45 * * * *` (hourly)           | –                                     | For weeks that have kicked off and are not settled: re-sync those weeks (scores/status) and call `settle_week` for each. Returns per-week `{ready, picks_settled, eliminated, completed}`.                                          |
 | `POST /api/jobs/weekly_action_check` | `5 * * * *` (hourly)        | –                                     | For weeks past `last_deadline_at` and not yet checked: call `weekly_action_check` (auto byes, forced picks). Per-member errors are logged, not fatal.                                                                                |
 | `POST /api/jobs/sync_live`       | `*/2 * * * *`                   | –                                     | While a game is in progress (or within 15 min before / 6 h after kickoff): refresh those weeks' scores, clock and status and call `settle_week`. Returns at once otherwise. Realtime streams the rows to open pages.                 |
+| `POST /api/jobs/send_reminders`  | `20 * * * *` (hourly)           | –                                     | When a week's last deadline is 1–3 h away: email every opted-in member with nothing in (the database lists who, via `picks_due_reminders`), through Resend; records each send so nobody is nagged twice. No-op without `RESEND_API_KEY`. |
 
 The cron entries are wide on purpose: pg_cron runs in UTC and the jobs decide for themselves
 whether there is anything to do, so daylight-saving changes need no edits.
@@ -63,7 +64,8 @@ check the shape has not changed.
 | `JOB_SECRET`                | every job, web     | ≥ 32 random bytes; the only credential the endpoints accept |
 | `SUPABASE_URL`              | store              | Falls back to `NEXT_PUBLIC_SUPABASE_URL`                    |
 | `SUPABASE_SERVICE_ROLE_KEY` | store              | Never in `src/`; see SECURITY.md                            |
-| `APP_URL`                   | (reserved)         | For cache revalidation calls                                |
+| `APP_URL`                   | reminders          | Links in emails (falls back to `NEXT_PUBLIC_APP_URL`)       |
+| `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` | reminders | Optional; leave unset to disable reminder emails     |
 
 `pickem/settings.py` reads these lazily so importing a module never fails; a misconfigured job
 answers 500 with a clear message instead of crashing at import.

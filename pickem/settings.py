@@ -12,6 +12,8 @@ class Settings:
     supabase_url: str | None
     supabase_service_role_key: str | None
     app_url: str | None
+    resend_api_key: str | None = None
+    reminder_from: str | None = None
 
     @property
     def job_secret_configured(self) -> bool:
@@ -28,5 +30,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         job_secret=source.get("JOB_SECRET") or None,
         supabase_url=source.get("SUPABASE_URL") or source.get("NEXT_PUBLIC_SUPABASE_URL") or None,
         supabase_service_role_key=source.get("SUPABASE_SERVICE_ROLE_KEY") or None,
-        app_url=source.get("APP_URL") or None,
+        app_url=source.get("APP_URL") or source.get("NEXT_PUBLIC_APP_URL") or None,
+        resend_api_key=source.get("RESEND_API_KEY") or None,
+        reminder_from=source.get("REMINDER_FROM_EMAIL") or None,
     )

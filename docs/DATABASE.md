@@ -78,6 +78,7 @@ One row per auth user, created by the `on_auth_user_created` trigger on `auth.us
 | `id`            | uuid  | PK, = `auth.users.id`, cascades on delete                                  |
 | `display_name`  | text  | 2–32 chars; defaults to sign-up metadata, else the email's local part      |
 | `avatar_path`?  | text  | Object key in the `logos` bucket, must be `<own uid>/<file>` (trigger)     |
+| `reminders_enabled` | bool | Opt-out for the picks-due emails (default on)                             |
 | `is_site_admin` | bool  | Only the service role can set it (column not granted to `authenticated`)   |
 
 ### app_settings
@@ -175,6 +176,12 @@ The news feed. `league_id`, `kind` (`league_event_kind`), `actor_user_id`? (who 
 `{"automatic": true}`, `{"reason": "last_standing"}`). Rendered by `describeEvent()` in
 `src/lib/domain/events.ts`.
 
+### reminder_log
+
+One row per reminder email sent: `user_id`, `league_id`, `week_id`, `kind` (`picks_due`),
+`sent_at`; unique together, so a member is never nagged twice for the same week. Members read
+their own rows; only the job writes (through `record_reminder`).
+
 ### job_runs and audit_log (observability)
 
 **job_runs** – one row per Python job execution: `job_name`, `request_id`?, `status`,
@@ -269,6 +276,8 @@ checks membership itself), **commissioner**, **operator** = service role or site
 | `settle_week(week)`               | operator | Settles finished games first. If any game is still not final/void returns `{ready:false}`. Otherwise stamps `settled_at`, eliminates members at ≤ 0 with no open picks, posts `week_settled` once per league, and completes a league when one player is left standing or when the week is the last regular-season week (highest balance; ties to whoever risked less). Returns a jsonb summary. |
 | `weekly_action_check(week)`       | operator | After `last_deadline_at`: every active member with no pick that week gets their bye (weeks 1–13, if unused) or a system pick of one unit on the underdog of the week's last game (positive home spread → home is the dog; pick 'em → away). Per-member errors are returned, not raised. Stamps `action_checked_at`. |
 | `refresh_game_deadlines()`        | operator | Re-runs the deadline trigger for scheduled games after the site timezone changes.                                                                                                                                                                     |
+| `picks_due_reminders(week)`       | operator | Who needs the picks-due email for this week (active, opted in, no pick, no bye, not yet reminded), with email and available balance.                                                                                                               |
+| `record_reminder(user, league, week)` | operator | Marks a reminder as sent.                                                                                                                                                                                                                      |
 | `update_season(season, weeks, playoffs_start_at)` | operator | Sets how many regular-season weeks count (the last one settles winners) and the playoffs date. Audited.                                                                                                                       |
 | `jwt_role()`, `require_operator()` | internal | Role from the JWT; raises `42501` unless service role or site admin.                                                                                                                                                                                 |
 
@@ -329,6 +338,7 @@ reset` and the hosted project's migration runner (`supabase db push`).
 | `20260930236000_league_archive`   | `leagues.archived_at`, `archive_league`; archived leagues hidden, frozen and skipped by jobs |
 | `20261001090000_live`             | `games` added to the Realtime publication (live scores stream to browsers)                 |
 | `20261001120000_member_stats`     | `league_member_stats` view: ATS record, net, risked, biggest win, forced picks per member  |
+| `20261001150000_reminders`        | `profiles.reminders_enabled`, `reminder_log`, `picks_due_reminders`, `record_reminder`     |
 
 Conventions: one migration per feature; never edit a migration that has reached production (add a
 new one); every function `security definer` sets `search_path = ''` and schema-qualifies

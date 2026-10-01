@@ -48,4 +48,8 @@ select cron.schedule('pickem-sync-live', '*/2 * * * *', $$ select public.call_jo
 -- Bye / forced-pick check: hourly at :05, so it runs a few minutes after each 11:59 PM ET deadline.
 select cron.schedule('pickem-weekly-action-check', '5 * * * *', $$ select public.call_job('weekly_action_check') $$);
 
+-- Picks-due reminders: hourly; emails members with nothing in when a week's last deadline is
+-- 1-3 hours away (needs RESEND_API_KEY + REMINDER_FROM_EMAIL on the app, else a no-op).
+select cron.schedule('pickem-send-reminders', '20 * * * *', $$ select public.call_job('send_reminders') $$);
+
 -- To remove one: select cron.unschedule('pickem-lock-lines');

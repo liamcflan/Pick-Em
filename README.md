@@ -99,6 +99,7 @@ Python functions under `api/jobs/`, called by pg_cron through `public.call_job()
 | `sync_finals`         | hourly                  | Refresh scores for weeks in play and call `settle_week` (payouts, busts)  |
 | `weekly_action_check` | hourly                  | After a week's last deadline: automatic byes and forced 1k underdog picks |
 | `sync_live`           | every 2 min, game days  | Live scores and clock while games are on; grades finals as they happen    |
+| `send_reminders`      | hourly                  | Emails members with nothing in when the week's last deadline is near      |
 | `health`              | on demand               | Proves the runtime and job secret work                                    |
 
 ## Repository layout

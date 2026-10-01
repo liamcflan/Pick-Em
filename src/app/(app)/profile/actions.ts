@@ -113,3 +113,21 @@ export async function changePassword(
   log.info("password changed", { user_id: user.id });
   return { success: "Password updated." };
 }
+
+/** Opt in or out of the "picks lock soon" emails. */
+export async function updateReminders(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const user = await getUser();
+  if (!user) return { error: "Not signed in." };
+  const enabled = formData.get("reminders") === "on";
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ reminders_enabled: enabled })
+    .eq("id", user.id);
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/profile");
+  return { success: enabled ? "Reminders on." : "Reminders off." };
+}

@@ -16,6 +16,7 @@ export type Database = {
           display_name: string;
           avatar_path: string | null;
           is_site_admin: boolean;
+          reminders_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -24,6 +25,7 @@ export type Database = {
           display_name: string;
           avatar_path?: string | null;
           is_site_admin?: boolean;
+          reminders_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -32,6 +34,7 @@ export type Database = {
           display_name?: string;
           avatar_path?: string | null;
           is_site_admin?: boolean;
+          reminders_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -807,6 +810,10 @@ export type Database = {
       jwt_role: { Args: Record<string, never>; Returns: string };
       refresh_game_deadlines: { Args: Record<string, never>; Returns: number };
       archive_league: { Args: { p_league_id: string; p_archived?: boolean }; Returns: undefined };
+      record_reminder: {
+        Args: { p_user_id: string; p_league_id: string; p_week_id: string };
+        Returns: undefined;
+      };
       update_season: {
         Args: {
           p_season_id: string;

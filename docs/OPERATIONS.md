@@ -23,7 +23,9 @@ How to deploy, what happens each week, and what to do when something is off.
 3. **Vercel project** from the GitHub repo. Environment variables:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`,
    `JOB_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (the last
-   two are read by the Python functions only). Production tracks `main`; `dev` deploys previews.
+   two are read by the Python functions only). Optional: `RESEND_API_KEY` and
+   `REMINDER_FROM_EMAIL` (a verified sender on your Resend account) turn on the picks-due
+   reminder emails; without them that job is a no-op. Production tracks `main`; `dev` deploys previews.
 4. **Schedule the jobs**: open `supabase/cron/schedule.sql`, replace the app URL and job secret,
    and run it once in the SQL editor. Verify with `select * from cron.job;`.
 5. **Make yourself site admin**: `update public.profiles set is_site_admin = true where id =
@@ -42,6 +44,7 @@ How to deploy, what happens each week, and what to do when something is off.
 | Wednesday 07:00–10:00     | `lock_lines` (hourly until done)| `/admin/lines`: every game has a line; news feed shows "Lines are locked" |
 | Wednesday morning         | Admin matches the NY Post       | `/admin/lines`: edit spreads; edits are audited    |
 | Nightly 11:59 PM          | Game deadlines                  | Picks sheet shows "locked"                         |
+| 1–3 h before the week's last deadline | `send_reminders` | Members with nothing in get one email per league    |
 | ~5 min after the week's last deadline | `weekly_action_check` | News feed: automatic byes / forced picks           |
 | Hourly at :45 during games| `sync_finals` → `settle_week`   | Picks show won/lost; leaderboard updates; "Week N is settled" once every game is final |
 

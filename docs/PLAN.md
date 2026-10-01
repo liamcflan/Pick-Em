@@ -348,7 +348,8 @@ or when the last regular-season week settles), so no nightly job is needed. Rema
 go-live: the deploy checklist in [OPERATIONS.md](OPERATIONS.md), then the 13 Oct dry run.
 
 **Status (1 Oct 2026):** live scores (`sync_live` every two minutes while games are on), Realtime
-refresh of the picks page and dashboard, and the in-game cover probability are on `dev`.
+refresh of the picks page and dashboard, the in-game cover probability, pick history with per-member
+stats, and the picks-due reminder email (opt-out on the profile; needs a Resend key) are on `dev`.
 
 ### Phase 2 — Live (Nov, in season)
 - Minute-level score sync during game windows; live status (quarter, clock, score) on dashboard picks.

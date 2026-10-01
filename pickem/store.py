@@ -199,3 +199,27 @@ class SupabaseSettlementStore(SupabaseLineStore):
             if week.get("id") and week["id"] not in seen:
                 seen[week["id"]] = {"id": week["id"], "week_number": week["week_number"]}
         return sorted(seen.values(), key=lambda w: int(w["week_number"]))
+
+    def weeks_with_deadline_between(
+        self, season_id: str, start: datetime, end: datetime
+    ) -> list[Mapping[str, Any]]:
+        res = (
+            self.client.table("weeks")
+            .select("id, week_number, last_deadline_at")
+            .eq("season_id", season_id)
+            .gt("last_deadline_at", start.isoformat())
+            .lte("last_deadline_at", end.isoformat())
+            .order("week_number")
+            .execute()
+        )
+        return list(res.data or [])
+
+    def picks_due_reminders(self, week_id: str) -> list[Mapping[str, Any]]:
+        res = self.client.rpc("picks_due_reminders", {"p_week_id": week_id}).execute()
+        return list(res.data or [])
+
+    def record_reminder(self, user_id: str, league_id: str, week_id: str) -> None:
+        self.client.rpc(
+            "record_reminder",
+            {"p_user_id": user_id, "p_league_id": league_id, "p_week_id": week_id},
+        ).execute()
