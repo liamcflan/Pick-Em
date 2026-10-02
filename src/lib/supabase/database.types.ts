@@ -810,6 +810,19 @@ export type Database = {
       jwt_role: { Args: Record<string, never>; Returns: string };
       refresh_game_deadlines: { Args: Record<string, never>; Returns: number };
       archive_league: { Args: { p_league_id: string; p_archived?: boolean }; Returns: undefined };
+      admin_list_users: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          email: string;
+          display_name: string;
+          is_site_admin: boolean;
+          created_at: string;
+          last_sign_in_at: string | null;
+          leagues: Json;
+        }[];
+      };
+      set_site_admin: { Args: { p_user_id: string; p_is_admin: boolean }; Returns: undefined };
       record_reminder: {
         Args: { p_user_id: string; p_league_id: string; p_week_id: string };
         Returns: undefined;

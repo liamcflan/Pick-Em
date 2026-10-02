@@ -33,7 +33,9 @@ How to deploy, what happens each week, and what to do when something is off.
    URL if `10kpoolhq.com` is not live yet), and run it once in the SQL editor. Verify with
    `select * from cron.job;`.
 5. **Make yourself site admin**: `update public.profiles set is_site_admin = true where id =
-   '<your uid>';` in the SQL editor (the column is deliberately not editable through the app).
+   '<your uid>';` in the SQL editor. This is only needed for the first admin; after that, admins
+   grant and revoke admin (and set commissioners) on `/admin/users`, which always keeps at least
+   one admin.
 6. **Import the season**: `/admin` → Sync schedule (or wait for the daily job). Check the season
    table shows 18 weeks with lock times and deadlines.
 7. **Protect `main`** in GitHub (require the CI checks) and enable secret scanning + push

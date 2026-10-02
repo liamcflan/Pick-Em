@@ -3,6 +3,7 @@
 | Document                          | Read it when you want to…                                                  |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | [RULES.md](RULES.md)              | know the league's official rules and how each one maps to the app          |
+| [DESIGN_BRIEF.md](DESIGN_BRIEF.md) | hand the product to a designer or design tool for the UI/UX pass          |
 | [ARCHITECTURE.md](ARCHITECTURE.md)| understand the system end to end: runtimes, trust levels, the weekly loop  |
 | [DATABASE.md](DATABASE.md)        | work with the schema: tables, enums, ledger math, functions, RLS, migrations |
 | [JOBS.md](JOBS.md)                | change or add a Python job, or understand the ESPN provider                |

@@ -32,6 +32,14 @@ class SupabaseScheduleStore:
         created = self.client.table("seasons").insert({"year": year}).execute()
         return created.data[0]["id"]
 
+    def activate_if_none(self, season_id: str) -> bool:
+        """Make this season active unless one already is. True when it changed anything."""
+        active = self.client.table("seasons").select("id").eq("is_active", True).limit(1).execute()
+        if active.data:
+            return False
+        self.client.table("seasons").update({"is_active": True}).eq("id", season_id).execute()
+        return True
+
     def team_ids_by_espn_id(self) -> dict[int, str]:
         res = self.client.table("teams").select("id, espn_team_id").execute()
         return {int(row["espn_team_id"]): row["id"] for row in res.data or []}

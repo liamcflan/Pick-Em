@@ -157,3 +157,54 @@ export async function archiveLeague(
   revalidatePath("/admin/leagues");
   return { success: parsed.data.archived === "true" ? "League archived." : "League restored." };
 }
+
+/** Grant or revoke site admin. The database refuses to remove the last admin. */
+export async function setSiteAdmin(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireSiteAdmin();
+  const parsed = z
+    .object({ userId: z.string().uuid(), isAdmin: z.enum(["true", "false"]) })
+    .safeParse({ userId: formData.get("userId"), isAdmin: formData.get("isAdmin") });
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_site_admin", {
+    p_user_id: parsed.data.userId,
+    p_is_admin: parsed.data.isAdmin === "true",
+  });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/admin/users");
+  return { success: parsed.data.isAdmin === "true" ? "Now a site admin." : "Admin removed." };
+}
+
+/** Make a member a commissioner of a league, or back to a member, from the admin panel. */
+export async function setLeagueRole(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireSiteAdmin();
+  const parsed = z
+    .object({
+      leagueId: z.string().uuid(),
+      userId: z.string().uuid(),
+      role: z.enum(["member", "commissioner"]),
+    })
+    .safeParse({
+      leagueId: formData.get("leagueId"),
+      userId: formData.get("userId"),
+      role: formData.get("role"),
+    });
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_role", {
+    p_league_id: parsed.data.leagueId,
+    p_user_id: parsed.data.userId,
+    p_role: parsed.data.role,
+  });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath("/admin/users");
+  return { success: parsed.data.role === "commissioner" ? "Now commissioner." : "Now a member." };
+}

@@ -33,6 +33,14 @@ class FakeStore:
     def get_or_create_season(self, year: int) -> str:
         return f"season-{year}"
 
+    active_season: str | None = None
+
+    def activate_if_none(self, season_id: str) -> bool:
+        if self.active_season is not None:
+            return False
+        self.active_season = season_id
+        return True
+
     def team_ids_by_espn_id(self) -> dict[int, str]:
         return dict(self.teams)
 
@@ -108,3 +116,33 @@ def test_fetch_failure_is_recorded_and_other_weeks_continue() -> None:
 def test_game_row_none_for_unknown_team() -> None:
     g = parse_scoreboard(FIXTURE)[0]
     assert game_row(g, season_id="s", week_id="w", team_ids={}, now=datetime.now(UTC)) is None
+
+
+def test_first_import_activates_its_season() -> None:
+    store = FakeStore()
+    summary = sync_schedule(store, year=2026, weeks=[5], fetch=fetch_fixture, activator=store)
+    assert summary["activated"] is True
+    assert store.active_season == "season-2026"
+
+
+def test_import_never_switches_an_active_season() -> None:
+    store = FakeStore()
+    store.active_season = "season-2025"
+    summary = sync_schedule(store, year=2026, weeks=[5], fetch=fetch_fixture, activator=store)
+    assert summary["activated"] is False
+    assert store.active_season == "season-2025"
+
+
+def test_import_without_games_does_not_activate() -> None:
+    store = FakeStore()
+    summary = sync_schedule(
+        store, year=2026, weeks=[6], fetch=lambda y, w: {"events": []}, activator=store
+    )
+    assert summary["weeks"] == 0 and summary["activated"] is False
+    assert store.active_season is None
+
+
+def test_finals_and_live_reuse_do_not_activate() -> None:
+    store = FakeStore()
+    summary = sync_schedule(store, year=2026, weeks=[5], fetch=fetch_fixture)
+    assert summary["activated"] is False and store.active_season is None

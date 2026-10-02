@@ -5,8 +5,9 @@
  *
  * - "prompt": Chrome/Edge/Android fired `beforeinstallprompt`; we can show our own Install button.
  * - "ios": iPhone/iPad Safari, which has no prompt API; we show "Share → Add to Home Screen".
- * - "hidden": already installed, dismissed, the browser cannot install, or the visitor has not
- *   interacted with the page yet.
+ * - "hidden": a desktop or laptop, already installed, dismissed, the browser cannot install, or
+ *   the visitor has not interacted with the page yet. Desktop Chrome also offers installation,
+ *   but the hint is only worth the space on a phone or tablet.
  *
  * The hint waits for the first tap, scroll or key press: asking before someone has engaged is
  * pushy, and a card that paints during page load would also become the page's largest paint.
@@ -70,11 +71,38 @@ export function isIos(userAgent: string, maxTouchPoints: number): boolean {
   return /iPad|iPhone|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1);
 }
 
-export function getSnapshot(): InstallMode {
-  if (!engaged || isStandalone() || isDismissed()) return "hidden";
-  if (deferred) return "prompt";
-  if (isIos(navigator.userAgent, navigator.maxTouchPoints)) return "ios";
+/** Phone or tablet: iOS/iPadOS, or a user agent that says Android or Mobile. */
+export function isMobileDevice(userAgent: string, maxTouchPoints: number): boolean {
+  return isIos(userAgent, maxTouchPoints) || /Android|Mobi/i.test(userAgent);
+}
+
+export type InstallInputs = {
+  userAgent: string;
+  maxTouchPoints: number;
+  engaged: boolean;
+  standalone: boolean;
+  dismissed: boolean;
+  canPrompt: boolean;
+};
+
+/** Which hint to show, if any. Pure, so the rules are unit-tested. */
+export function installMode(i: InstallInputs): InstallMode {
+  if (!isMobileDevice(i.userAgent, i.maxTouchPoints)) return "hidden";
+  if (!i.engaged || i.standalone || i.dismissed) return "hidden";
+  if (i.canPrompt) return "prompt";
+  if (isIos(i.userAgent, i.maxTouchPoints)) return "ios";
   return "hidden";
+}
+
+export function getSnapshot(): InstallMode {
+  return installMode({
+    userAgent: navigator.userAgent,
+    maxTouchPoints: navigator.maxTouchPoints,
+    engaged,
+    standalone: isStandalone(),
+    dismissed: isDismissed(),
+    canPrompt: deferred !== null,
+  });
 }
 
 export function getServerSnapshot(): InstallMode {
