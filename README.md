@@ -1,4 +1,6 @@
-# Pick-Em
+# 10K Pool HQ
+
+Live at [10kpoolhq.com](https://10kpoolhq.com). (The repository is `pick-em`, the app's original name.)
 
 NFL spread pick'em for friend groups. Everyone starts the season with a bankroll, bets against
 locked weekly spreads, and whoever has the most when the playoffs start wins the league.

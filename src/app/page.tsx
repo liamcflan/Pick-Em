@@ -8,7 +8,7 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-16 text-center">
       <div className="space-y-3">
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Pick-Em</h1>
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">10K Pool HQ</h1>
         <p className="text-muted-foreground mx-auto max-w-md text-lg">
           NFL spread pick&rsquo;em for friend groups. Start with a bankroll, bet the spread every
           week, and see who has the most when the playoffs start.
@@ -30,6 +30,9 @@ export default async function Home() {
           </>
         )}
       </div>
+      <Link href="/status" className="text-muted-foreground text-sm underline">
+        Site status
+      </Link>
     </main>
   );
 }

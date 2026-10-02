@@ -37,7 +37,14 @@ async function expectAccessible(page: Page) {
 }
 
 test.describe("accessibility: public pages", () => {
-  for (const path of ["/", "/sign-in", "/sign-up", "/forgot-password", "/offline.html"]) {
+  for (const path of [
+    "/",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/offline.html",
+    "/status",
+  ]) {
     test(path, async ({ page }) => {
       await page.goto(path);
       await expectAccessible(page);

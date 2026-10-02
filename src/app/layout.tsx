@@ -10,11 +10,11 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Pick-Em", template: "%s · Pick-Em" },
+  title: { default: "10K Pool HQ", template: "%s · 10K Pool HQ" },
   description: "NFL spread pick'em for friend groups.",
-  applicationName: "Pick-Em",
+  applicationName: "10K Pool HQ",
   // iPhone "Add to Home Screen": open full screen with our icon and name.
-  appleWebApp: { capable: true, title: "Pick-Em", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "10K Pool HQ", statusBarStyle: "default" },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

@@ -1,4 +1,6 @@
-# Pick-Em — Project Plan
+# 10K Pool HQ — Project Plan
+
+The app was called Pick-Em until 2 Oct 2026; the repository keeps the name `pick-em`.
 
 NFL spread pick'em for friend groups. Everyone starts a season with a bankroll (default $10,000), bets against locked weekly spreads, and whoever has the most when the playoffs start wins the league.
 

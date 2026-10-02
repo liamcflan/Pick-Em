@@ -62,7 +62,7 @@ The app reads its address from `NEXT_PUBLIC_APP_URL`, so no code changes when th
    `select vault.update_secret(id, 'https://10kpoolhq.com') from vault.secrets where name = 'pickem_app_url';`
 6. **Email from the domain** (optional, turns on reminders): add `10kpoolhq.com` under
    resend.com → Domains and create the DNS records it lists (SPF and DKIM). Once it shows Verified,
-   set `REMINDER_FROM_EMAIL=Pick-Em <no-reply@10kpoolhq.com>` and `RESEND_API_KEY` in Vercel, and
+   set `REMINDER_FROM_EMAIL=10K Pool HQ <no-reply@10kpoolhq.com>` and `RESEND_API_KEY` in Vercel, and
    use the same sender in Supabase's custom SMTP settings so password resets come from it too.
 7. **Check.** Open `https://www.10kpoolhq.com` (should land on `https://10kpoolhq.com`), sign in
    with email and with Google, request a password reset, and run the smoke test above.
@@ -106,6 +106,7 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
 
 | Symptom                                       | Check                                                                                                            |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Site loads but something is off               | Open `/status`: it shows the live commit and which setup step is missing (database, admin, season, secrets).     |
 | Job shows `failed` on `/admin`                | `job_runs.detail` has the error and request id; grep Vercel function logs for that `request_id`.                  |
 | Jobs never run                                | `select * from cron.job_run_details order by start_time desc limit 20;` — `call_job` needs the Vault secrets and pg_net. |
 | Admin buttons say "Could not reach the job endpoint" | Locally use `vercel dev`; in production check the Python functions deployed (`/api/jobs/health`).      |
