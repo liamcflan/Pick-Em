@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ vars.BACKUPS_ENABLED == 'true' }}
     steps:
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: Dump roles, schema and data
