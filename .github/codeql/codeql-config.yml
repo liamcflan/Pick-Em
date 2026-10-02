@@ -1,0 +1,12 @@
+name: Pick-Em CodeQL
+queries:
+  - uses: security-and-quality
+query-filters:
+  # Protocol / abstract method bodies are written as `...`, which this query reports as a
+  # statement with no effect. That is the idiomatic Python spelling, not dead code.
+  - exclude:
+      id: py/ineffectual-statement
+paths-ignore:
+  - node_modules
+  - .next
+  - tests/python/fixtures

@@ -1,0 +1,36 @@
+[project]
+name = "pickem-jobs"
+version = "0.1.0"
+description = "Data-pull jobs for Pick-Em (schedule import, spread lock, score sync). Deployed as Vercel Python functions from api/."
+requires-python = ">=3.12"
+dependencies = [
+  "httpx>=0.28",
+  "supabase>=2.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["node_modules", ".next", ".venv"]
+
+[tool.ruff.lint]
+# "S" = flake8-bandit: flags SQL built from strings (S608), shell injection, weak hashes, etc.
+select = ["E", "F", "I", "B", "UP", "N", "W", "SIM", "RUF", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # asserts and dummy secrets are fine in tests
+"api/**" = ["N801"]  # Vercel requires the lowercase class name `handler`
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+pythonpath = ["."]
+addopts = "-q"
