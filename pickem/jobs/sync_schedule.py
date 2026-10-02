@@ -35,6 +35,10 @@ class ScheduleStore(Protocol):
     def finish_run(self, run_id: str, status: str, detail: Mapping[str, Any]) -> None: ...
 
 
+class SeasonActivator(Protocol):
+    def activate_if_none(self, season_id: str) -> bool: ...
+
+
 Fetcher = Callable[[int, int], Mapping[str, Any]]
 
 
@@ -70,6 +74,7 @@ def sync_schedule(
     weeks: list[int] | None = None,
     fetch: Fetcher = fetch_scoreboard,
     now: datetime | None = None,
+    activator: SeasonActivator | None = None,
 ) -> dict[str, Any]:
     now = now or datetime.now(UTC)
     settings = store.settings()
@@ -81,7 +86,14 @@ def sync_schedule(
     season_id = store.get_or_create_season(year)
     team_ids = store.team_ids_by_espn_id()
 
-    summary: dict[str, Any] = {"year": year, "weeks": 0, "games": 0, "unmatched": [], "errors": []}
+    summary: dict[str, Any] = {
+        "year": year,
+        "weeks": 0,
+        "games": 0,
+        "unmatched": [],
+        "errors": [],
+        "activated": False,
+    }
     for week_number in weeks or list(DEFAULT_WEEKS):
         try:
             payload = fetch(year, week_number)
@@ -121,6 +133,13 @@ def sync_schedule(
         summary["games"] += store.upsert_games(rows)
         summary["weeks"] += 1
         log.info("week synced", extra={"week": week_number, "games": len(rows)})
+
+    # A fresh install has no active season, and leagues can only be created in one. The first
+    # import that finds games makes its season active; later imports never switch seasons.
+    if activator is not None and summary["weeks"]:
+        summary["activated"] = activator.activate_if_none(season_id)
+        if summary["activated"]:
+            log.info("season activated", extra={"year": year})
     return summary
 
 
@@ -139,7 +158,7 @@ def run(request: JobRequest) -> JobResponse:
     store = SupabaseScheduleStore.from_settings(request.settings)
     run_id = store.start_run("sync_schedule", request.request_id)
     try:
-        summary = sync_schedule(store, year=year, weeks=weeks)
+        summary = sync_schedule(store, year=year, weeks=weeks, activator=store)
     except Exception as exc:
         store.finish_run(run_id, "failed", {"error": str(exc)})
         raise
