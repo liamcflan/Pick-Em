@@ -103,6 +103,12 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
 - **Re-run settlement now.** `/admin` → "Refresh scores and settle".
 - **Retire a dry-run league.** `/admin/leagues` → Archive. Members stop seeing it, nothing is
   deleted, and Restore brings it back exactly as it was.
+- **Run a job without the admin page.** GitHub → Actions → **Run job** → Run workflow, pick the
+  job and an optional JSON body (e.g. `{"year": 2026}` for `sync_schedule`). It calls the live
+  site's endpoint like pg_cron does and shows the job's JSON result in the run summary. Needs the
+  repository secret `JOB_SECRET` (Settings → Secrets and variables → Actions), the same value as
+  in Vercel; the repository variable `APP_URL` overrides `https://10kpoolhq.com`.
+- **Make someone a site admin or commissioner.** `/admin/users`.
 
 ## When something is wrong
 

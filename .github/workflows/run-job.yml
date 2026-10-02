@@ -1,0 +1,64 @@
+name: Run job
+
+# Calls one of the app's job endpoints on the deployed site, exactly as pg_cron does, so a job can
+# be run on demand (for example the first schedule import) without the admin page.
+# Needs the repository secret JOB_SECRET (same value as in Vercel). The repository variable
+# APP_URL overrides the default address.
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Job to run
+        type: choice
+        default: health
+        options:
+          - health
+          - sync_schedule
+          - lock_lines
+          - sync_finals
+          - weekly_action_check
+          - sync_live
+          - send_reminders
+      body:
+        description: 'JSON body, e.g. {"year": 2026}'
+        default: "{}"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: run-job-${{ inputs.job }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the job endpoint
+        env:
+          JOB: ${{ inputs.job }}
+          BODY: ${{ inputs.body }}
+          JOB_SECRET: ${{ secrets.JOB_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://10kpoolhq.com' }}
+        run: |
+          if [ -z "$JOB_SECRET" ]; then
+            echo "::error::Add the JOB_SECRET repository secret (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          if ! printf '%s' "$BODY" | jq -e 'type == "object"' > /dev/null; then
+            echo "::error::body must be a JSON object"
+            exit 1
+          fi
+          # -L follows the apex/www redirect; 307/308 keep the POST and its body.
+          status=$(curl -sS -L -X POST "$APP_URL/api/jobs/$JOB" \
+            -H "content-type: application/json" -H "x-job-secret: $JOB_SECRET" \
+            --data "$BODY" --max-time 90 -o response.json -w '%{http_code}')
+          echo "HTTP $status"
+          jq . response.json 2>/dev/null || cat response.json
+          {
+            echo "### $JOB: HTTP $status"
+            echo '```json'
+            jq . response.json 2>/dev/null || cat response.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$status" -ge 200 ] && [ "$status" -lt 300 ]
