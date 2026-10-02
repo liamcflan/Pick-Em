@@ -106,6 +106,7 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
 
 | Symptom                                       | Check                                                                                                            |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Every page is Vercel's 404, 0 function invocations | The project's Framework Preset is not Next.js. `vercel.json` pins `"framework": "nextjs"` and `"outputDirectory": ".next"` so this cannot recur; if it does, check Settings → Build and Deployment. |
 | Site loads but something is off               | Open `/status`: it shows the live commit and which setup step is missing (database, admin, season, secrets).     |
 | Job shows `failed` on `/admin`                | `job_runs.detail` has the error and request id; grep Vercel function logs for that `request_id`.                  |
 | Jobs never run                                | `select * from cron.job_run_details order by start_time desc limit 20;` — `call_job` needs the Vault secrets and pg_net. |
