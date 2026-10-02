@@ -247,12 +247,14 @@ checks membership itself), **commissioner**, **operator** = service role or site
 | --------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `create_league(name, starting_balance?)`      | member       | Creates the league in the active season, makes the caller commissioner, writes their `initial` row, posts `member_joined`.        |
 | `join_league(code)`                           | member       | Normalises the code (case, dashes), rejects closed leagues, restores a soft-left membership or creates one with the initial balance. |
-| `set_member_role(league, user, role)`         | commissioner | Promote/demote; refuses to demote the last commissioner.                                                                            |
+| `set_member_role(league, user, role)`         | commissioner or site admin | Promote/demote; refuses to demote the last commissioner. Site admins can use it in any league.                                                                            |
 | `remove_member(league, user)`                 | commissioner or self | Soft leave (`left_at`); the ledger is kept. Last commissioner cannot leave.                                                  |
 | `rotate_invite_code(league)`                  | commissioner | New 8-char code.                                                                                                                    |
 | `update_league(league, name, balance)`        | commissioner | Rename; rebase everyone's balance via `adjustment` rows, only before any pick exists.                                              |
 | `post_commissioner_note(league, text)`        | commissioner | News-feed note.                                                                                                                     |
 | `archive_league(league, archived)`            | operator     | Retire or restore a league without deleting rows. `is_league_member()` is false for an archived league, so every member-facing policy hides it. |
+| `admin_list_users()`                          | operator     | Every account with email (from `auth.users`), admin flag, sign-up and last sign-in times, and active league roles. Powers `/admin/users`. |
+| `set_site_admin(user, is_admin)`               | operator     | Grant or revoke site admin; refuses to remove the last one. Audited through `profiles_audit`. |
 | `is_league_member(league)`, `is_league_commissioner(league)`, `is_site_admin()` | any | Helpers used by RLS policies (security definer so policies do not recurse).            |
 | `current_week_id(season)`                     | any          | First week whose last deadline has not passed.                                                                                      |
 
@@ -339,6 +341,7 @@ reset` and the hosted project's migration runner (`supabase db push`).
 | `20261001090000_live`             | `games` added to the Realtime publication (live scores stream to browsers)                 |
 | `20261001120000_member_stats`     | `league_member_stats` view: ATS record, net, risked, biggest win, forced picks per member  |
 | `20261001150000_reminders`        | `profiles.reminders_enabled`, `reminder_log`, `picks_due_reminders`, `record_reminder`     |
+| `20261002120000_user_admin`      | `admin_list_users`, `set_site_admin`; site admins may use `set_member_role` in any league |
 
 Conventions: one migration per feature; never edit a migration that has reached production (add a
 new one); every function `security definer` sets `search_path = ''` and schema-qualifies

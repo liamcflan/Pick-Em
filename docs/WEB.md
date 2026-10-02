@@ -23,6 +23,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 | `/profile`                  | member       | Display name; logo upload (browser crop to 256 px WebP)                              |
 | `/admin`                    | site admin   | Schedule import, settlement buttons, recent job runs, season editor and week table     |
 | `/admin/lines?week=`        | site admin   | Pull consensus lines now, edit any line, void a game                                  |
+| `/admin/users`              | site admin   | Every account with email, sign-up and last sign-in; make or remove site admins; make anyone commissioner or member in their leagues |
 | `/admin/leagues`            | site admin   | Every league with status, player counts, creator and invite code; archive / restore   |
 | `/admin/settings`           | site admin   | Lock day/time, timezone, default balance, bet unit, pick hiding                       |
 | `/admin/audit`              | site admin   | Audit log viewer with filters                                                         |
@@ -41,7 +42,7 @@ Phones can add 10K Pool HQ to the home screen and open it full screen.
 | `public/sw.js`                          | Service worker. Network-only; on a failed page load it serves the precached `/offline.html`. |
 | `components/pwa/register-service-worker` | Registers the worker in production builds only, so dev hot reload is unaffected.            |
 | `components/pwa/offline-banner`         | Banner on every page while `navigator.onLine` is false.                                      |
-| `components/pwa/install-hint`           | Floating card on the dashboard after the first tap, scroll or key press: an Install button where the browser offers one, Share → Add to Home Screen steps on iPhone; "Not now" is remembered in `localStorage`. It floats and waits for engagement so it never shifts the page or counts as the page's largest paint. |
+| `components/pwa/install-hint`           | Phones and tablets only. Floating card on the dashboard after the first tap, scroll or key press: an Install button where the browser offers one, Share → Add to Home Screen steps on iPhone; "Not now" is remembered in `localStorage`. It floats and waits for engagement so it never shifts the page or counts as the page's largest paint. |
 | `app/(app)/error.tsx`                   | Error boundary for signed-in pages; says "You're offline" when that is the cause, with a retry. |
 
 The worker never caches pages, API responses or Supabase calls: balances and scores must always be

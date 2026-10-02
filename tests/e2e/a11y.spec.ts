@@ -96,6 +96,7 @@ test("accessibility: admin pages", async ({ page }) => {
 
   for (const path of [
     "/admin",
+    "/admin/users",
     "/admin/lines",
     "/admin/leagues",
     "/admin/settings",
