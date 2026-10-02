@@ -10,7 +10,7 @@ test("landing page renders and links to sign in", async ({ page }) => {
     if (msg.text().includes("Content Security Policy")) cspViolations.push(msg.text());
   });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Pick-Em" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "10K Pool HQ" })).toBeVisible();
   await page.getByRole("link", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();

@@ -13,6 +13,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 | --------------------------- | ------------ | ------------------------------------------------------------------------------------- |
 | `/`                         | anyone       | Landing page                                                                          |
 | `/sign-in`, `/sign-up`, `/forgot-password`, `/update-password` | anyone | Email/password + Google; "remember me" controls cookie persistence |
+| `/status`                   | anyone       | Live commit and branch, Supabase reachable, migrations applied, app address and job secret set; signed-in users also see their admin status and the active season |
 | `/auth/callback`            | anyone       | OAuth / magic-link code exchange, then a same-origin redirect (`safeNext`)            |
 | `/dashboard`                | member       | My leagues with rank and balance, this week's picks per league with results, news across leagues |
 | `/leagues`                  | member       | Create a league / join by invite code                                                 |
@@ -31,7 +32,7 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 
 ## Installable app (PWA)
 
-Phones can add Pick-Em to the home screen and open it full screen.
+Phones can add 10K Pool HQ to the home screen and open it full screen.
 
 | Piece                                   | What it does                                                                                 |
 | --------------------------------------- | -------------------------------------------------------------------------------------------- |

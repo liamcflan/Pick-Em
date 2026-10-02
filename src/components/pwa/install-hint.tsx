@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 /**
- * "Install Pick-Em" card on the dashboard; hidden once installed or dismissed.
+ * "Install 10K Pool HQ" card on the dashboard; hidden once installed or dismissed.
  *
  * It can only appear after hydration (the server cannot know the platform), so it floats over the
  * bottom of the screen instead of sitting in the page flow, where it would shift the dashboard
@@ -30,12 +30,12 @@ export function InstallHint() {
     >
       <div>
         <h2 id="install-hint-title" className="font-medium">
-          Install Pick-Em
+          Install 10K Pool HQ
         </h2>
         <p className="text-muted-foreground">
           {mode === "ios"
-            ? "Tap the Share button, then “Add to Home Screen”, to open Pick-Em like an app."
-            : "Add Pick-Em to your home screen to open it like an app."}
+            ? "Tap the Share button, then “Add to Home Screen”, to open 10K Pool HQ like an app."
+            : "Add 10K Pool HQ to your home screen to open it like an app."}
         </p>
       </div>
       <div className="flex gap-2">

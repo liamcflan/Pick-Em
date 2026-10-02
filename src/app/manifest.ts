@@ -8,8 +8,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Pick-Em",
-    short_name: "Pick-Em",
+    name: "10K Pool HQ",
+    short_name: "10K Pool HQ",
     description: "NFL spread pick'em for friend groups.",
     start_url: "/dashboard",
     scope: "/",

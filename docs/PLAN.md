@@ -1,4 +1,6 @@
-# Pick-Em — Project Plan
+# 10K Pool HQ — Project Plan
+
+The app was called Pick-Em until 2 Oct 2026; the repository keeps the name `pick-em`.
 
 NFL spread pick'em for friend groups. Everyone starts a season with a bankroll (default $10,000), bets against locked weekly spreads, and whoever has the most when the playoffs start wins the league.
 
@@ -281,7 +283,7 @@ Verified against provider pricing pages on 2026-09-29. Free tiers change; re-che
 | The Odds API | Free | 18–36 credits/season of 500/month | **$0** |
 | ESPN public API | — | ~1k requests/week in season, cached | **$0** |
 | Resend (auth emails) | Free | < 100 emails/month (limit 3,000) | **$0** |
-| Domain (optional) | — | e.g. `yourname-pickem.com` | ~$1/mo ($12/yr); `*.vercel.app` is free |
+| Domain | — | `10kpoolhq.com` (decided 2 Oct 2026) | ~$1/mo (~$10–15/yr); `*.vercel.app` stays as a fallback |
 | Sentry (optional) | Developer | error tracking, 5k events/month | $0 |
 | **Total** | | | **$0–$1 / month** |
 

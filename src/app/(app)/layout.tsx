@@ -23,7 +23,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
           <nav className="flex items-center gap-4 text-sm font-medium" aria-label="Main">
             <Link href="/dashboard" className="text-base font-semibold tracking-tight">
-              Pick-Em
+              10K Pool HQ
             </Link>
             <Link href="/leagues" className="text-muted-foreground hover:text-foreground">
               Leagues

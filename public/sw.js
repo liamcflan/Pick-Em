@@ -1,12 +1,12 @@
 /*
- * Pick-Em service worker.
+ * 10K Pool HQ service worker.
  *
  * Deliberately small: it makes the app installable and shows /offline.html when a page load fails
  * because the network is down. It never caches pages or API responses, so balances, picks and
  * scores always come from the server; a stale leaderboard would be worse than an offline notice.
  * Bump VERSION when the offline page or icons change.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `pickem-offline-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"];

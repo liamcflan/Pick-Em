@@ -2,10 +2,12 @@
 -- Not a migration: it stores the deployed URL and the job secret in Vault, which are per-environment.
 --
 -- 1. Enable the extensions (Dashboard → Database → Extensions): pg_cron, pg_net.
--- 2. Replace the two values below, run this whole file.
+-- 2. Replace the job secret below (and the URL, if the custom domain is not live yet), run this
+--    whole file. To change the URL later:
+--    select vault.update_secret(id, 'https://NEW-ADDRESS') from vault.secrets where name = 'pickem_app_url';
 -- 3. Check: select * from cron.job;  and later  select * from cron.job_run_details order by start_time desc limit 20;
 
-select vault.create_secret('https://YOUR-APP.vercel.app', 'pickem_app_url');
+select vault.create_secret('https://10kpoolhq.com', 'pickem_app_url');
 select vault.create_secret('REPLACE-WITH-JOB_SECRET', 'pickem_job_secret');
 
 create or replace function public.call_job(p_name text, p_body jsonb default '{}'::jsonb)
