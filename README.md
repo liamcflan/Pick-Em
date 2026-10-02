@@ -64,7 +64,7 @@ the service-role key is read by the Python jobs alone.
 | Variable | Where it comes from |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Project Settings → API |
-| `NEXT_PUBLIC_APP_URL` | The deployed URL (used for OAuth and email redirects) |
+| `NEXT_PUBLIC_APP_URL` | The deployed URL, `https://10kpoolhq.com` in production (used for OAuth and email redirects) |
 | `JOB_SECRET` | `openssl rand -hex 32`; shared by pg_cron, the admin panel and the job functions |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Jobs only. Supabase → Project Settings → API |
 
@@ -80,7 +80,7 @@ the service-role key is read by the Python jobs alone.
    configure custom SMTP (Resend free tier) under Authentication → SMTP Settings.
 4. **Vercel project** linked to this repo. Add the environment variables above. Python functions
    under `api/` deploy automatically; verify with
-   `curl -H "x-job-secret: $JOB_SECRET" https://<app>/api/jobs/health`.
+   `curl -H "x-job-secret: $JOB_SECRET" https://10kpoolhq.com/api/jobs/health`.
 5. **Scheduling.** In the Supabase SQL editor run `supabase/cron/schedule.sql` after replacing the app URL and
    `JOB_SECRET` placeholders. It stores both in Vault and schedules the Wednesday line lock and hourly
    schedule refresh with pg_cron.

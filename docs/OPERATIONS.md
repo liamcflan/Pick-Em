@@ -10,7 +10,7 @@ How to deploy, what happens each week, and what to do when something is off.
 2. **Auth** (Dashboard → Authentication):
    - Providers: Email on; Google on with the OAuth client id/secret from your Google Cloud project
      (authorised redirect URI there: `https://<project-ref>.supabase.co/auth/v1/callback`).
-   - URL configuration: Site URL `https://<app>`; Redirect URLs `https://<app>/**` (and
+   - URL configuration: Site URL `https://10kpoolhq.com`; Redirect URLs `https://10kpoolhq.com/**` (and
      `http://localhost:3000/**` for local testing). Password-reset and confirmation links land on
      `/auth/callback`, which then sends the member to `/update-password` or the dashboard.
    - **Custom SMTP** (Settings → Auth → SMTP): the built-in sender is capped at a few emails per
@@ -29,15 +29,43 @@ How to deploy, what happens each week, and what to do when something is off.
    two are read by the Python functions only). Optional: `RESEND_API_KEY` and
    `REMINDER_FROM_EMAIL` (a verified sender on your Resend account) turn on the picks-due
    reminder emails; without them that job is a no-op. Production tracks `main`; `dev` deploys previews.
-4. **Schedule the jobs**: open `supabase/cron/schedule.sql`, replace the app URL and job secret,
-   and run it once in the SQL editor. Verify with `select * from cron.job;`.
+4. **Schedule the jobs**: open `supabase/cron/schedule.sql`, replace the job secret (and the app
+   URL if `10kpoolhq.com` is not live yet), and run it once in the SQL editor. Verify with
+   `select * from cron.job;`.
 5. **Make yourself site admin**: `update public.profiles set is_site_admin = true where id =
    '<your uid>';` in the SQL editor (the column is deliberately not editable through the app).
 6. **Import the season**: `/admin` → Sync schedule (or wait for the daily job). Check the season
    table shows 18 weeks with lock times and deadlines.
 7. **Protect `main`** in GitHub (require the CI checks) and enable secret scanning + push
    protection.
-8. Smoke test: `curl -H "x-job-secret: $JOB_SECRET" -X POST https://<app>/api/jobs/health`.
+8. Smoke test: `curl -H "x-job-secret: $JOB_SECRET" -X POST https://10kpoolhq.com/api/jobs/health`.
+
+## Custom domain: 10kpoolhq.com
+
+The production address is `https://10kpoolhq.com`, with `www.10kpoolhq.com` redirecting to it.
+The app reads its address from `NEXT_PUBLIC_APP_URL`, so no code changes when the domain changes.
+
+1. **Buy and attach.** Buy `10kpoolhq.com` in Vercel (Domains → Buy) and it is wired up
+   automatically. If you buy it elsewhere, add it under the project's Settings → Domains, choose
+   "Redirect www to apex", and create the DNS records Vercel shows at your registrar. Vercel issues
+   the HTTPS certificate once DNS resolves, usually within minutes.
+2. **Vercel environment variables.** Set `NEXT_PUBLIC_APP_URL` and `APP_URL` to
+   `https://10kpoolhq.com` for Production, then redeploy (variables apply to new builds only).
+3. **Supabase Auth** (Authentication → URL Configuration): Site URL `https://10kpoolhq.com`;
+   Redirect URLs `https://10kpoolhq.com/**`. Keep the `*.vercel.app` entries while preview
+   deployments need to sign in. Password-reset and sign-up emails build their links from the Site
+   URL, so they switch over immediately.
+4. **Google sign-in** (Google Cloud → APIs & Services → OAuth consent screen): add
+   `10kpoolhq.com` to Authorised domains, and set the app home page and privacy links to it. The
+   authorised redirect URI stays the Supabase one.
+5. **Scheduled jobs.** If `schedule.sql` already ran with the old address, update the Vault secret:
+   `select vault.update_secret(id, 'https://10kpoolhq.com') from vault.secrets where name = 'pickem_app_url';`
+6. **Email from the domain** (optional, turns on reminders): add `10kpoolhq.com` under
+   resend.com → Domains and create the DNS records it lists (SPF and DKIM). Once it shows Verified,
+   set `REMINDER_FROM_EMAIL=Pick-Em <no-reply@10kpoolhq.com>` and `RESEND_API_KEY` in Vercel, and
+   use the same sender in Supabase's custom SMTP settings so password resets come from it too.
+7. **Check.** Open `https://www.10kpoolhq.com` (should land on `https://10kpoolhq.com`), sign in
+   with email and with Google, request a password reset, and run the smoke test above.
 
 ## A normal week
 
