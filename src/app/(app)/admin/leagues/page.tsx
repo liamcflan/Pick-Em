@@ -55,7 +55,9 @@ export default async function AdminLeaguesPage() {
                   <th className="py-2 pr-4">Start</th>
                   <th className="py-2 pr-4">Created</th>
                   <th className="py-2 pr-4">Code</th>
-                  <th className="py-2 pr-4"></th>
+                  <th className="py-2 pr-4">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">

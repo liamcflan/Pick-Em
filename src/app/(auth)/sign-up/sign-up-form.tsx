@@ -16,7 +16,7 @@ export function SignUpForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create account</CardTitle>
+        <CardTitle as="h1">Create account</CardTitle>
         <CardDescription>
           You&rsquo;ll join a league with an invite code after this.
         </CardDescription>

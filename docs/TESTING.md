@@ -56,8 +56,14 @@ rollback;
 - `week.spec.ts` plays the settlement job's part with the **local** service-role key
   (`SUPABASE_SERVICE_ROLE_KEY`, exported by CI from `supabase status`). It creates its own game so
   parallel runs never interfere, and skips when the key is absent.
-- `pwa.spec.ts` needs no database: it checks the manifest and icons, then installs the service
-  worker, cuts the network with `context.setOffline(true)` and expects the offline page and banner.
+- `pwa.spec.ts` checks the manifest and icons, then installs the service worker, cuts the network
+  with `context.setOffline(true)` and expects the offline page and banner (no database needed). Its
+  iPhone test signs up, then checks the install hint appears after the first tap and stays
+  dismissed.
+- `a11y.spec.ts` runs axe-core (WCAG 2.1 A/AA plus best practices) on the public pages, every
+  signed-in page a player sees, and the admin pages (the test promotes its user with the local
+  service-role key, so that part skips without it). A failure lists each rule and the offending
+  elements.
 - In a sandbox without Chromium downloads, point at a preinstalled browser:
   `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium pnpm test:e2e`.
 - Selectors: prefer roles and labels; `data-testid` only where text is not stable

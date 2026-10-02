@@ -196,7 +196,7 @@ export default async function PicksPage({
             </p>
           ) : null}
         </div>
-        <nav className="flex flex-wrap gap-1 text-sm">
+        <nav className="flex flex-wrap gap-1 text-sm" aria-label="Weeks">
           {weeks.map((w) => (
             <Link
               key={w.id}

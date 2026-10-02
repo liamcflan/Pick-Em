@@ -97,7 +97,7 @@ export default async function HistoryPage({
             </p>
           </div>
         </div>
-        <nav className="flex flex-wrap gap-1 text-sm">
+        <nav className="flex flex-wrap gap-1 text-sm" aria-label="Members">
           {(members ?? []).map((m) => (
             <Link
               key={m.user_id}

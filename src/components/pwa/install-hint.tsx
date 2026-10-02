@@ -11,7 +11,13 @@ import {
 } from "@/components/pwa/install-store";
 import { Button } from "@/components/ui/button";
 
-/** "Install Pick-Em" card on the dashboard; hidden once installed or dismissed. */
+/**
+ * "Install Pick-Em" card on the dashboard; hidden once installed or dismissed.
+ *
+ * It can only appear after hydration (the server cannot know the platform), so it floats over the
+ * bottom of the screen instead of sitting in the page flow, where it would shift the dashboard
+ * down (CLS) and become the page's largest paint.
+ */
 export function InstallHint() {
   const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   if (mode === "hidden") return null;
@@ -20,7 +26,7 @@ export function InstallHint() {
     <section
       aria-labelledby="install-hint-title"
       data-testid="install-hint"
-      className="flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
+      className="bg-background fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md flex-col gap-3 rounded-lg border p-4 text-sm shadow-lg sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
         <h2 id="install-hint-title" className="font-medium">

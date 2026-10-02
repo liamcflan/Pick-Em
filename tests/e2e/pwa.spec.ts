@@ -54,3 +54,37 @@ test.describe("installable app", () => {
     await expect(banner).toBeHidden();
   });
 });
+
+// Signed-in, so this one needs Supabase (CI). iPhone Safari has no install prompt API, so the
+// dashboard explains Share > Add to Home Screen once the player starts using the page.
+test.describe("install hint on iPhone", () => {
+  test.use({
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+  });
+
+  test("appears after the first interaction and stays dismissed", async ({ page }) => {
+    const email = `e2e-install-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+    await page.goto("/sign-up");
+    await page.getByLabel("Display name").fill("Ios");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("correct-horse-battery");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    // Typing on the sign-up page already counted as engagement, so start from a fresh visit.
+    await page.reload();
+    const hint = page.getByTestId("install-hint");
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(hint).toBeHidden();
+    await page.getByRole("heading", { name: "Dashboard" }).click();
+    await expect(hint).toBeVisible();
+    await expect(hint).toContainText("Add to Home Screen");
+
+    await hint.getByRole("button", { name: "Not now" }).click();
+    await expect(hint).toBeHidden();
+    await page.reload();
+    await page.getByRole("heading", { name: "Dashboard" }).click();
+    await expect(hint).toBeHidden();
+  });
+});

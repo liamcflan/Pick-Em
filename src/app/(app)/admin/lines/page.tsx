@@ -88,7 +88,7 @@ export default async function AdminLinesPage({ searchParams }: PageProps<"/admin
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Lines · week {week.week_number}</h1>
-        <nav className="flex flex-wrap gap-1 text-sm">
+        <nav className="flex flex-wrap gap-1 text-sm" aria-label="Weeks">
           {weeks.map((w) => (
             <Link
               key={w.id}

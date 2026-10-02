@@ -5,7 +5,11 @@
  *
  * - "prompt": Chrome/Edge/Android fired `beforeinstallprompt`; we can show our own Install button.
  * - "ios": iPhone/iPad Safari, which has no prompt API; we show "Share → Add to Home Screen".
- * - "hidden": already installed, dismissed, or the browser cannot install.
+ * - "hidden": already installed, dismissed, the browser cannot install, or the visitor has not
+ *   interacted with the page yet.
+ *
+ * The hint waits for the first tap, scroll or key press: asking before someone has engaged is
+ * pushy, and a card that paints during page load would also become the page's largest paint.
  */
 export type InstallMode = "prompt" | "ios" | "hidden";
 
@@ -17,10 +21,21 @@ type BeforeInstallPromptEvent = Event & {
 export const DISMISS_KEY = "pickem:install-hint-dismissed";
 
 let deferred: BeforeInstallPromptEvent | null = null;
+let engaged = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+const ENGAGEMENT_EVENTS = ["pointerdown", "keydown", "scroll"] as const;
+function onEngage() {
+  engaged = true;
+  for (const type of ENGAGEMENT_EVENTS) window.removeEventListener(type, onEngage, true);
+  emit();
+}
+
 if (typeof window !== "undefined") {
+  for (const type of ENGAGEMENT_EVENTS) {
+    window.addEventListener(type, onEngage, { capture: true, passive: true });
+  }
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault(); // keep the event so our button can show the browser's dialog
     deferred = event as BeforeInstallPromptEvent;
@@ -56,7 +71,7 @@ export function isIos(userAgent: string, maxTouchPoints: number): boolean {
 }
 
 export function getSnapshot(): InstallMode {
-  if (isStandalone() || isDismissed()) return "hidden";
+  if (!engaged || isStandalone() || isDismissed()) return "hidden";
   if (deferred) return "prompt";
   if (isIos(navigator.userAgent, navigator.maxTouchPoints)) return "ios";
   return "hidden";

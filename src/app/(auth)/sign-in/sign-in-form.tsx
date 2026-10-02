@@ -16,7 +16,7 @@ export function SignInForm({ next, initialError }: { next: string; initialError?
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle as="h1">Sign in</CardTitle>
         <CardDescription>Welcome back. Your picks are waiting.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -14,7 +14,7 @@ export function UpdatePasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Choose a new password</CardTitle>
+        <CardTitle as="h1">Choose a new password</CardTitle>
         <CardDescription>At least 8 characters.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -15,7 +15,7 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reset password</CardTitle>
+        <CardTitle as="h1">Reset password</CardTitle>
         <CardDescription>
           Enter the email you signed up with and we&rsquo;ll send a link to choose a new password.
           Signed up with Google? Just use the Google button on the sign-in page.

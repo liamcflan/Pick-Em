@@ -40,7 +40,7 @@ Phones can add Pick-Em to the home screen and open it full screen.
 | `public/sw.js`                          | Service worker. Network-only; on a failed page load it serves the precached `/offline.html`. |
 | `components/pwa/register-service-worker` | Registers the worker in production builds only, so dev hot reload is unaffected.            |
 | `components/pwa/offline-banner`         | Banner on every page while `navigator.onLine` is false.                                      |
-| `components/pwa/install-hint`           | Dashboard card: an Install button where the browser offers one, Share → Add to Home Screen steps on iPhone; "Not now" is remembered in `localStorage`. |
+| `components/pwa/install-hint`           | Floating card on the dashboard after the first tap, scroll or key press: an Install button where the browser offers one, Share → Add to Home Screen steps on iPhone; "Not now" is remembered in `localStorage`. It floats and waits for engagement so it never shifts the page or counts as the page's largest paint. |
 | `app/(app)/error.tsx`                   | Error boundary for signed-in pages; says "You're offline" when that is the cause, with a retry. |
 
 The worker never caches pages, API responses or Supabase calls: balances and scores must always be
@@ -117,6 +117,22 @@ Client components are limited to what needs interactivity; everything else is a 
 | `JOB_SECRET`                          | server only       | Lets admin buttons call the Python jobs              |
 
 `src/lib/env.ts` validates them with Zod at startup; the service-role key is deliberately absent.
+
+## Accessibility and performance
+
+- Every page has one `<main>` and one `<h1>`; card titles are `<h2>` (`CardTitle as="h1"` where the
+  card is the page, as on the auth screens). Each `<nav>` has an `aria-label`.
+- Link and button names contain their visible text (WCAG 2.5.3); icon-only controls and empty
+  table headers get `sr-only` text.
+- `tests/e2e/a11y.spec.ts` enforces this with axe on every page in CI.
+- Lighthouse, mobile, on 2 Oct 2026 against a local production build:
+
+| Page                   | Performance | Accessibility | Best practices | SEO |
+| ---------------------- | ----------- | ------------- | -------------- | --- |
+| `/sign-in`             | 97          | 100           | 100            | 100 |
+| `/dashboard`           | 98          | 100           | 100            | 100 |
+| `/leagues/[id]`        | 98          | 100           | 100            | 100 |
+| `/leagues/[id]/picks`  | 97          | 100           | 100            | 100 |
 
 ## Conventions
 

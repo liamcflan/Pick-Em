@@ -15,8 +15,18 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return <div className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />;
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
-  return <h3 className={cn("leading-none font-semibold tracking-tight", className)} {...props} />;
+/**
+ * Cards sit directly under a page's h1, so their titles are h2 by default (heading order). Pass
+ * `as="h1"` when the card is the page itself, as on the sign-in and sign-up screens.
+ */
+function CardTitle({
+  className,
+  as: Heading = "h2",
+  ...props
+}: React.ComponentProps<"h2"> & { as?: "h1" | "h2" | "h3" }) {
+  return (
+    <Heading className={cn("leading-none font-semibold tracking-tight", className)} {...props} />
+  );
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"p">) {

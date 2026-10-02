@@ -353,7 +353,8 @@ stats, and the picks-due reminder email (opt-out on the profile; needs a Resend 
 
 **Status (2 Oct 2026):** Phase 3 started early. The app is installable (manifest, icons, a
 network-only service worker with an offline page), shows an offline banner, and offers an install
-hint on the dashboard.
+hint on the dashboard. Accessibility pass done: axe runs on every page in CI, and Lighthouse mobile
+scores are 97–98 for performance and 100 for accessibility on the main pages.
 
 ### Phase 2 — Live (Nov, in season)
 - Minute-level score sync during game windows; live status (quarter, clock, score) on dashboard picks.
@@ -366,7 +367,7 @@ hint on the dashboard.
 - ~~PWA manifest + install prompt + offline shell.~~ Done 2 Oct 2026.
 - Multi-season support: archive view, all-time records.
 - README with architecture diagram, screenshots, ADR index, "how a bet flows through the system" walkthrough for interviews.
-- Lighthouse ≥ 90 on mobile; accessibility pass.
+- ~~Lighthouse ≥ 90 on mobile; accessibility pass.~~ Done 2 Oct 2026 (see [WEB.md](WEB.md)).
 
 ---
 
