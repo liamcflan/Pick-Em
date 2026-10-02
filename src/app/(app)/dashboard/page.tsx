@@ -6,6 +6,7 @@ import { rankRows } from "@/lib/domain/leaderboard";
 import { NewsFeed, type FeedItem } from "@/components/leagues/news-feed";
 import { LiveRefresher } from "@/components/live/live-refresher";
 import { ThisWeek, type ThisWeekLeague } from "@/components/picks/this-week";
+import { InstallHint } from "@/components/pwa/install-hint";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { anyGameLive } from "@/lib/domain/live";
@@ -183,6 +184,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {thisWeek?.live ? <LiveRefresher weekId={thisWeek.weekId} /> : null}
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+      <InstallHint />
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>

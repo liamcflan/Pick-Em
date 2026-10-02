@@ -351,6 +351,10 @@ go-live: the deploy checklist in [OPERATIONS.md](OPERATIONS.md), then the 13 Oct
 refresh of the picks page and dashboard, the in-game cover probability, pick history with per-member
 stats, and the picks-due reminder email (opt-out on the profile; needs a Resend key) are on `dev`.
 
+**Status (2 Oct 2026):** Phase 3 started early. The app is installable (manifest, icons, a
+network-only service worker with an offline page), shows an offline banner, and offers an install
+hint on the dashboard.
+
 ### Phase 2 — Live (Nov, in season)
 - Minute-level score sync during game windows; live status (quarter, clock, score) on dashboard picks.
 - Cover-probability model + ESPN win probability shown per live pick.
@@ -359,7 +363,7 @@ stats, and the picks-due reminder email (opt-out on the profile; needs a Resend 
 - Email/push reminder "picks lock in 2 hours and you have $X unbet" (optional).
 
 ### Phase 3 — Polish and portfolio (Jan–Feb 2027)
-- PWA manifest + install prompt + offline shell.
+- ~~PWA manifest + install prompt + offline shell.~~ Done 2 Oct 2026.
 - Multi-season support: archive view, all-time records.
 - README with architecture diagram, screenshots, ADR index, "how a bet flows through the system" walkthrough for interviews.
 - Lighthouse ≥ 90 on mobile; accessibility pass.

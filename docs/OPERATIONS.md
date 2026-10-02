@@ -84,6 +84,7 @@ Everything is idempotent: pressing the admin buttons early or twice is safe.
 | Lines missing for some games                  | ESPN had no consensus yet; `lock_lines` retries hourly on Wednesday, or set the line by hand.                   |
 | Week will not settle                          | A game is still `scheduled`/`postponed`. Wait for it or void it.                                                 |
 | Member "cannot bet": deadline passed          | Deadlines are 11:59 PM site-time the night before kickoff; confirm the timezone in `/admin/settings`.            |
+| Installed app shows an old offline page       | The worker updates on the next online visit; if not, bump `VERSION` in `public/sw.js` and redeploy.              |
 | CI red on the release PR                      | The Database job runs pgTAP on real Supabase; run `pnpm db:test` with Docker to reproduce, or read the job log.  |
 
 ## Backups and data

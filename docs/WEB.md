@@ -29,6 +29,30 @@ strict, Tailwind v4 with hand-written shadcn-style primitives. Deployed on Verce
 
 `/admin/*` returns 404 (not 403) for non-admins so the section's existence is not advertised.
 
+## Installable app (PWA)
+
+Phones can add Pick-Em to the home screen and open it full screen.
+
+| Piece                                   | What it does                                                                                 |
+| --------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/app/manifest.ts`                   | Serves `/manifest.webmanifest`: name, icons, `start_url: /dashboard`, standalone display.     |
+| `public/icons/`                         | 192/512 icons, a maskable 512 (artwork inside Android's 80% safe zone) and the Apple icon.    |
+| `public/sw.js`                          | Service worker. Network-only; on a failed page load it serves the precached `/offline.html`. |
+| `components/pwa/register-service-worker` | Registers the worker in production builds only, so dev hot reload is unaffected.            |
+| `components/pwa/offline-banner`         | Banner on every page while `navigator.onLine` is false.                                      |
+| `components/pwa/install-hint`           | Dashboard card: an Install button where the browser offers one, Share → Add to Home Screen steps on iPhone; "Not now" is remembered in `localStorage`. |
+| `app/(app)/error.tsx`                   | Error boundary for signed-in pages; says "You're offline" when that is the cause, with a retry. |
+
+The worker never caches pages, API responses or Supabase calls: balances and scores must always be
+live, and caching a signed-in page would also keep one user's data on a shared device. Bump
+`VERSION` in `sw.js` when the offline page or its icon changes. `/sw.js` is served with
+`Cache-Control: no-store` (see `next.config.ts`) so fixes reach installed apps on the next visit.
+The CSP lists `worker-src 'self'` and `manifest-src 'self'` explicitly.
+
+To change the icon, edit `scripts/icons/icon.mjs`, then run
+`node scripts/icons/render.mjs` (set `PLAYWRIGHT_CHROMIUM_PATH` if Playwright's browser is not
+downloaded).
+
 ## Auth and sessions
 
 - `src/lib/supabase/server.ts` creates a request-scoped client that reads/writes the Supabase
@@ -79,6 +103,7 @@ sentences), `leaderboard` (ranking with tie-breaks), `avatar` (paths, URLs, init
 - `components/admin/` – schedule import, line editor + void button, settlement buttons, settings.
 - `components/profile/` – Avatar, ProfileForm, LogoUploader (client-side canvas resize, direct
   upload to Storage, then a server action to record the path).
+- `components/pwa/` – service-worker registration, offline banner, install hint (see above).
 
 Client components are limited to what needs interactivity; everything else is a server component.
 

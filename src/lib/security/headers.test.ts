@@ -25,6 +25,12 @@ describe("buildCsp", () => {
     expect(csp).toContain("upgrade-insecure-requests");
   });
 
+  it("lets the same-origin service worker and manifest load", () => {
+    const csp = buildCsp(base);
+    expect(csp).toContain("worker-src 'self'");
+    expect(csp).toContain("manifest-src 'self'");
+  });
+
   it("only adds unsafe-eval in development", () => {
     expect(buildCsp({ ...base, isDev: true })).toMatch(/script-src[^;]*'unsafe-eval'/);
     expect(buildCsp({ ...base, isDev: true })).not.toContain("upgrade-insecure-requests");

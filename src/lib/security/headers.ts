@@ -42,6 +42,10 @@ export function buildCsp({ nonce, supabaseUrl, isDev, isVercelPreview = false }:
     ],
     "font-src": ["'self'"],
     "connect-src": connectSrc,
+    // The service worker (public/sw.js) and the web app manifest are same-origin. worker-src is
+    // explicit because the script-src fallback ignores 'self' under 'strict-dynamic'.
+    "worker-src": ["'self'"],
+    "manifest-src": ["'self'"],
     // Server-action redirects after a form POST are subject to form-action in Chrome, so the
     // Google OAuth hop (via Supabase) must be listed explicitly.
     "form-action": ["'self'", supabaseOrigin, "https://accounts.google.com"],

@@ -3,3 +3,4 @@ node_modules
 pnpm-lock.yaml
 supabase/.temp
 *.md
+.vercel

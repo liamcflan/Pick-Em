@@ -56,6 +56,8 @@ rollback;
 - `week.spec.ts` plays the settlement job's part with the **local** service-role key
   (`SUPABASE_SERVICE_ROLE_KEY`, exported by CI from `supabase status`). It creates its own game so
   parallel runs never interfere, and skips when the key is absent.
+- `pwa.spec.ts` needs no database: it checks the manifest and icons, then installs the service
+  worker, cuts the network with `context.setOffline(true)` and expects the offline page and banner.
 - In a sandbox without Chromium downloads, point at a preinstalled browser:
   `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium pnpm test:e2e`.
 - Selectors: prefer roles and labels; `data-testid` only where text is not stable
