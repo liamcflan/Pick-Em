@@ -26,7 +26,7 @@ jobs:
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/schema.sql
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/data.sql --data-only --use-copy
           tar czf "backup-$(date -u +%Y%m%d).tgz" backup
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: db-backup-${{ github.run_id }}
           path: backup-*.tgz
